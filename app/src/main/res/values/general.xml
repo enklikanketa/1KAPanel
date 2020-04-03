@@ -3,7 +3,7 @@
     <string name="server_url" translatable="false">https://your.server.com/</string>
 
     <!-- Link to your feedback survey -->
-    <string name="feedbackLink" translatable="false">https://your.server.com/a/6110</string>
+    <string name="feedbackLink" translatable="false">https://your.server.com/a/questionnaire_id</string>
 
     <!-- id of "app is tracking you" notification -->
     <!-- id of "GPS off" notification -->
