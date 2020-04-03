@@ -1,7 +1,0 @@
-<resources>
-    <string name="app_name">1KAPanel</string>
-    <string name="title_activity_main">Domov</string>
-
-    <string name="loadPage">Nalagam stran&#8230;</string>
-    <string name="defaultSurveyURL">https://www.1ka.si/a/137092</string>
-</resources>

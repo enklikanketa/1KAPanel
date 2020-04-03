@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!--https://www.1ka.si/ ali http://test.1ka.si/ ali http://192.168.1.101/1ka/ (localhost) -->
-    <string name="server_url" translatable="false">http://141.255.212.60/1ka/</string>
-
-    <string name="defaultSurveyURL">https://www.1ka.si/a/137092</string>
-</resources>

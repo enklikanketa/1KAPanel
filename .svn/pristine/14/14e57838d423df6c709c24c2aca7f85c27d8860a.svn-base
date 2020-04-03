@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!--https://www.1ka.si/ ali http://test.1ka.si/ ali http://192.168.1.101/1ka/ (localhost) -->
-    <string name="server_url" translatable="false">http://192.168.1.105/1ka/</string>
-    <string name="nextPin_project_name" translatable="false">1KAPanel</string>
-
-    <string name="defaultSurveyURL">http://192.168.1.105/1ka/a/107</string>
-</resources>
