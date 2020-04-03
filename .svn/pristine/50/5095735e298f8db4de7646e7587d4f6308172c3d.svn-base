@@ -1,0 +1,143 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+/**
+ * Created by Uroš on 30/11/2015.
+ */
+public class WebResevanje extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.web_resevanje);
+
+        getSupportActionBar();
+
+        Bundle bundle = getIntent().getExtras();
+        String link = bundle.getString("link");
+        Log.v("1kapanel", "message link "+link);
+
+        //naslov forme
+        //setTitle(naslov_vprasalnika);
+
+        //set webview
+        final WebView browser;
+        browser = (WebView) findViewById(R.id.webView);
+        WebSettings ws = browser.getSettings();
+        ws.setLoadsImagesAutomatically(true);
+        ws.setJavaScriptEnabled(true);
+        ws.setAllowFileAccess(true);
+        ws.setDomStorageEnabled(true);
+        browser.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        browser.getSettings().setBuiltInZoomControls(true);
+        browser.loadUrl(link);
+
+        browser.setWebViewClient(new WebViewClient() {
+            ProgressDialog loader;
+            boolean niKonec = true;
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                if (loader != null)
+                    dismissDialog(WebResevanje.this, loader);
+
+                if (niKonec)
+                    //progressdialog when page is loading
+                    loader = ProgressDialog.show(WebResevanje.this, "",
+                            WebResevanje.this.getResources().getString(R.string.loadPage), true);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                Log.v("WebPageSpeed", "shouldOverrideUrlLoading " + url);
+                //if this url, survey is ended
+                if (url.equals("https://www.1ka.si/") || url.equals("http://www.1ka.si/") || url.equals("http://localhost/1ka/")) {
+                    niKonec = false;
+                    dismissDialog(WebResevanje.this, loader);
+                    finish();
+                    /*if (!isPreview)
+                        Toast.makeText(WebResevanje.this, WebResevanje.this.getText(R.string.feedbackSuccess)
+                                .toString(), Toast.LENGTH_LONG).show();*/
+                } else if (url.equals("https://www.facebook.com/dialog/return/close?#_=_")) {
+                    niKonec = false;
+                    dismissDialog(WebResevanje.this, loader);
+                    finish();
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (niKonec)
+                    dismissDialog(WebResevanje.this, loader);
+            }
+        });
+
+        final SwipeRefreshLayout swipeLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh_webinfo);
+        //swipeLayout.setColorSchemeResources(R.color.enkablue);
+        swipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener()
+        {
+            @Override
+            public void onRefresh()
+            {
+                //if (Network.checkMobileInternet(WebResevanje.this, true)) {
+                    browser.reload();
+                //}
+                swipeLayout.setRefreshing(false);
+            }
+        });
+    }
+
+    /*@Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                nazaj();
+                return true;
+            default:
+                return true;
+        }
+    }*/
+
+    //gumb nazaj na telefonu
+    /*public void onBackPressed() {
+        nazaj();
+    }
+
+    //F, ko hoce uporabnik iti nazaj (na MobilneAnkete)
+    private void nazaj() {
+        //NavUtils.navigateUpFromSameTask(this);
+        if (Network.checkMobileInternet(WebResevanje.this, true))
+            generalLib.finishNazaj(this);
+    }*/
+
+    /**
+     * More safe closing or dismissing of dialog
+     *
+     * @param act    - activity
+     * @param dialog - dialog to close or dismiss
+     */
+    public static void dismissDialog(Activity act, Dialog dialog) {
+        try {
+            if (((dialog != null) && dialog.isShowing()) && !act.isFinishing()/* || act.isDestroyed()*/) {
+                dialog.dismiss();
+            }
+        } catch (final IllegalArgumentException e) {
+            // Handle or log or ignore
+        }
+    }
+}

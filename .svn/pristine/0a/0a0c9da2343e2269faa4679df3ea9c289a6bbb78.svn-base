@@ -1,0 +1,243 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
+
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.Map;
+
+import enklikanketa.com.a1kapanel.Home;
+import enklikanketa.com.a1kapanel.MyActivity;
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.Receivers.ActionReceiver;
+import enklikanketa.com.a1kapanel.Services.LocationUpdatesService;
+import enklikanketa.com.a1kapanel.WebResevanje;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
+import static enklikanketa.com.a1kapanel.App.NOTIFICATION_PERSISTANT;
+import static enklikanketa.com.a1kapanel.App.NOTIFICATION_SURVEY_PUSH;
+
+/**
+ * Created by podkrizniku on 06/12/2017.
+ */
+
+public class NotificationLib {
+
+    private Context ctx;
+
+    public NotificationLib(Context base) {
+        ctx = base;
+    }
+
+    /**
+     * Show notification for survey
+     * @param data - map of pairs for title, message, link, sound and sender_id
+     */
+    public void showNotificationSurvey(Map<String, String> data) {
+        if(data != null) {
+            //you can get your text message here.
+            String message = data.get("message");
+            String title = data.get("title");
+            String link = data.get("link");
+            String action = data.get("action");
+            String sound = data.get("sound");
+            String sender_id = data.get("sender_id");
+
+            //for geofences
+            String geof_id = data.get("geof_id");
+            String act_id = data.get("act_id");
+            String geof_version = data.get("geof_version");
+
+            Intent intent;
+            if(link.equals("survey_list"))
+                intent = new Intent(ctx, Home.class);
+            else if(action != null && action.equals("activity"))
+                intent = new Intent(ctx, MyActivity.class);
+            else if(action != null && action.equals("tracking"))
+                intent = new Intent(ctx, MyActivity.class);
+            else {
+                intent = new Intent(ctx, WebResevanje.class);
+                intent.putExtra("link", link);
+                intent.putExtra("geof_id", geof_id);
+                intent.putExtra("act_id", act_id);
+                intent.putExtra("srv_version", geof_version);
+            }
+
+            int id = (sender_id != null) ? Integer.parseInt(sender_id) : GeneralLib.getRandomInt();
+
+            PendingIntent pi = PendingIntent.getActivity(ctx, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(ctx, NOTIFICATION_SURVEY_PUSH)
+                    .setTicker(ctx.getString(R.string.app_name))
+                    .setSmallIcon(android.R.drawable.ic_menu_myplaces)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setContentIntent(pi)
+                    //.addAction(action)
+                    //.setOngoing(true);//non removable
+                    .setAutoCancel(true);//removable on touch action
+
+            // Set the Channel ID for Android O.
+            /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                notificationBuilder.setChannelId(NOTIFICATION_CHANNEL_1); // Channel ID
+            }*/
+
+            //if (sound != null && sound.equals("1"))
+                notificationBuilder.setDefaults(Notification.DEFAULT_ALL);
+
+            Notification notification = notificationBuilder.build();
+
+            NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+            if (notificationManager != null)
+                notificationManager.notify(id, notification);
+        }
+    }
+
+    /**
+     * Show Ongoing (static) notification about "app is tracking"
+     */
+    public void showNotificationTracking() {
+        //This is the intent of PendingIntent
+        Intent intentAction = new Intent(ctx, ActionReceiver.class);
+        intentAction.setAction(ActivityLib.ACTION_STOP_ACTIVITY);
+        PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, intentAction, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Action action = new NotificationCompat.Action.Builder(-1, ctx.getString(R.string.Stop_Tracking), pi).build();
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(ctx, NOTIFICATION_PERSISTANT)
+                .setTicker(ctx.getString(R.string.app_name))
+                .setSmallIcon(android.R.drawable.ic_menu_myplaces)
+                .setContentTitle(ctx.getString(R.string.app_tracking))
+                .setPriority(Notification.PRIORITY_HIGH)
+                //.setContentText(message)
+                //.setContentIntent(pi)
+                .addAction(action)
+                .setOngoing(true);//non removable
+        //.setAutoCancel(true);//removable on touch action
+
+        // Set the Channel ID for Android O.
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationBuilder.setChannelId(NOTIFICATION_CHANNEL_1); // Channel ID
+        }*/
+
+        Notification notification = notificationBuilder.build();
+
+        NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+        if(notificationManager != null)
+            notificationManager.notify(ctx.getResources().getInteger(R.integer.tracking_notification_id), notification);
+    }
+
+    /**
+     * Returns the {@link NotificationCompat} used as part of the foreground service.
+     */
+    public Notification notificationLocationTracking(String text) {
+        Intent stopIntent = new Intent(ctx, ActionReceiver.class);
+        stopIntent.setAction(TrackingLib.ACTION_STOP_TRACKING);
+        Intent pauseIntent = new Intent(ctx, ActionReceiver.class);
+        pauseIntent.setAction(TrackingLib.ACTION_PAUSE_TRACKING);
+        Intent startIntent = new Intent(ctx, ActionReceiver.class);
+        startIntent.setAction(TrackingLib.ACTION_START_TRACKING);
+
+        // The PendingIntent to launch activity.
+        /*PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
+                stopIntent, 0);*/
+        PendingIntent pistop = PendingIntent.getBroadcast(ctx, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pipouse = PendingIntent.getBroadcast(ctx, 1, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pistart = PendingIntent.getBroadcast(ctx, 2, startIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Action action;
+
+        TrackingLib tlib = new TrackingLib(ctx);
+        if (tlib.isCanTrack())
+            action = new NotificationCompat.Action.Builder(android.R.drawable.ic_media_pause,
+                    ctx.getString(R.string.tracking_notification_pause), pipouse).build();
+        else
+            action = new NotificationCompat.Action.Builder(android.R.drawable.ic_media_play,
+                    ctx.getString(R.string.tracking_notification_start), pistart).build();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, NOTIFICATION_PERSISTANT)
+                .addAction(action)
+                .addAction(android.R.drawable.ic_lock_power_off, ctx.getString(R.string.tracking_notification_stop), pistop)
+                .setContentText(text)
+                .setContentTitle(getLocationTitle())
+                .setOngoing(true)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setSmallIcon(android.R.drawable.ic_menu_myplaces)
+                .setTicker(text)
+                .setWhen(System.currentTimeMillis());
+
+        // Set the Channel ID for Android O.
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId(NOTIFICATION_CHANNEL_1); // Channel ID
+        }*/
+
+        return builder.build();
+    }
+
+    /**
+     * Shows notification with action button for starting tracking
+     */
+    public void showNotificationRunLocationTracking() {
+        Intent startIntent = new Intent(ctx, ActionReceiver.class);
+        startIntent.setAction(TrackingLib.ACTION_RUN_TRACKING);
+        PendingIntent pistart = PendingIntent.getBroadcast(ctx, 3, startIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, NOTIFICATION_SURVEY_PUSH)
+                .addAction(android.R.drawable.ic_media_play, ctx.getString(R.string.tracking_notification_start), pistart)
+                .setContentText(ctx.getString(R.string.tracking_notification_start_desc))
+                .setContentTitle(ctx.getString(R.string.tracking_notification_start_title))
+                .setPriority(Notification.DEFAULT_ALL)
+                .setSmallIcon(android.R.drawable.ic_menu_myplaces);
+
+        Notification notification = builder.build();
+
+        NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+        if (notificationManager != null)
+            notificationManager.notify(LocationUpdatesService.NOTIFICATION_START_TRACKING_ID, notification);
+    }
+
+    private String getLocationTitle() {
+        return DateFormat.getDateTimeInstance().format(new Date());
+    }
+
+    /**
+     * Show notification about "GPS is off"
+     */
+    public void showNotificationGPS() {
+        //This is the intent of PendingIntent
+        //Intent intentAction = new Intent(ctx, Main.class);
+        //PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, intentAction, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(ctx, NOTIFICATION_PERSISTANT)
+                .setTicker(ctx.getString(R.string.app_name))
+                .setSmallIcon(android.R.drawable.ic_menu_myplaces)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setContentTitle(ctx.getString(R.string.turn_gps_on));
+                //.setContentText(message)
+                //.setContentIntent(pi)
+                //.setOngoing(true);//non removable
+        //.setAutoCancel(true);//removable on touch action
+
+        // Set the Channel ID for Android O.
+        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationBuilder.setChannelId(NOTIFICATION_CHANNEL_1); // Channel ID
+        }*/
+
+        Notification notification = notificationBuilder.build();
+
+        NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+        if(notificationManager != null)
+            notificationManager.notify(ctx.getResources().getInteger(R.integer.GPS_notification_id), notification);
+    }
+
+    public void hideNotification(int notification_id){
+        NotificationManager mNotificationManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (mNotificationManager != null)
+            mNotificationManager.cancel(notification_id);
+    }
+}

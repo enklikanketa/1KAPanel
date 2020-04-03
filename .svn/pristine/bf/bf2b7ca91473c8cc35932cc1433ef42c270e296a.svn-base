@@ -1,0 +1,80 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.support.annotation.StyleRes;
+import android.support.v7.app.AppCompatDialog;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+/**
+ * Created by Developer on 29.6.2017.
+ */
+
+public class DialogUserActivity extends AppCompatDialog {
+
+    private Activity act;
+    private int activity_id;
+
+    // This is the reference to the associated listener
+    private final TaskListener taskListener;
+
+    DialogUserActivity(Activity context, @StyleRes int themeResId, int activity_id, TaskListener listener) {
+        super(context, themeResId);
+        this.act = context;
+        this.activity_id = activity_id;
+        this.taskListener = listener;
+    }
+
+    public interface TaskListener {
+        public void onFinished(String result);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        setContentView(R.layout.dialog_user_activity);
+
+        String[] actArr = act.getResources().getStringArray(R.array.activity_types);
+        LinearLayout uad_parent = (LinearLayout) findViewById(R.id.uad_parent);
+
+        for(String actStr : actArr){
+            View optionView = View.inflate(act, R.layout.dialog_user_activity_item, null);
+            TextView optionTextView = (TextView) optionView.findViewById(R.id.textView);
+            optionTextView.setText(actStr);
+
+            optionView.setOnClickListener(new customOnClickListener(actStr));
+
+            if(uad_parent != null)
+                uad_parent.addView(optionView);
+        }
+    }
+
+    private class customOnClickListener implements View.OnClickListener
+    {
+
+        String var;
+        private customOnClickListener(String var) {
+            this.var = var;
+        }
+
+        @Override
+        public void onClick(View v)
+        {
+            new sendActivityEditTask(act, activity_id, var, new sendActivityEditTask.TaskListener() {
+                @Override
+                public void onFinished(String result) {
+                    // In onPostExecute we check if the listener is valid
+                    if(taskListener != null) {
+
+                        // And if it is we call the callback function on it.
+                        taskListener.onFinished(result);
+                    }
+                }
+            }).execute();
+            DialogUserActivity.this.dismiss();
+        }
+
+    }
+}
+

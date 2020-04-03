@@ -1,0 +1,172 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.NotificationManager;
+import android.content.Context;
+import android.os.Bundle;
+import android.preference.ListPreference;
+import android.preference.Preference;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceFragment;
+import android.util.Log;
+
+import net.nextpin.geolib.NextPin;
+import net.nextpin.geolib.http.NextPinAPI;
+
+import java.util.HashMap;
+
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.Libraries.NotificationLib;
+
+
+/**
+ * Created by matejs on 1.12.2015.
+ */
+public class PreferencesFragment extends PreferenceFragment implements
+        Preference.OnPreferenceChangeListener
+{
+    public static final String PREF_TOKEN = "PREF_TOKEN";
+    public static final String PREF_DB_NUMBER = "PREF_DB_NUMBER";
+    public static final String PREF_START_STOP = "PREF_START_STOP";
+
+    // /DEV option
+    public static final String PREF_DEV_SERVER = "PREF_DEV_SERVER";
+
+    private static final String TAG = "PreferencesFragment";
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.layout.preferences);
+
+        final NextPin nextPin = NextPin.getNextPinInstance(getActivity());
+
+        Preference pref = findPreference(PREF_TOKEN);
+        pref.setOnPreferenceChangeListener(this);
+        setTokenPrefSummary(pref, NextPin.getToken(getActivity()),
+                NextPin.getProjectToken(getActivity()));
+        final Preference button = findPreference(PREF_START_STOP);
+
+        if(!nextPin.isStarted()){
+            button.setTitle(getString(R.string.Start_Tracking));
+            button.setSummary(getString(R.string.start_desc));
+        }
+
+        button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                if (button.getTitle().equals(getString(R.string.Stop_Tracking))){
+                    nextPin.stop();
+                    PrefsActivity.postTrackingLog(getActivity(), "STOP", "user_preferences");
+                    NotificationManager mNotificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+                    if(mNotificationManager != null)
+                        mNotificationManager.cancel(getActivity().getResources().getInteger(R.integer.tracking_notification_id));
+                    button.setTitle(getString(R.string.Start_Tracking));
+                    button.setSummary(getString(R.string.start_desc));
+                    Log.d(TAG, "Stopping NextPin");
+                }
+                else{
+                    nextPin.start();
+                    PrefsActivity.postTrackingLog(getActivity(), "START", "user_preferences");
+                    //show ongoing notification
+                    NotificationLib nlib = new NotificationLib(getActivity());
+                    nlib.showNotificationTracking(getActivity().getString(R.string.app_tracking));
+                    button.setTitle(getString(R.string.Stop_Tracking));
+                    button.setSummary(getString(R.string.stop_desc));
+                    Log.d(TAG, "Starting NextPin");
+                }
+                return true;
+            }
+        });
+
+        pref = findPreference(PREF_DB_NUMBER);
+        pref.setSummary(String.valueOf(nextPin.getOfflinceRecordsNumber()));
+
+        populateDevOptions();
+    }
+
+    /**
+     * Adds a developer's options. These should not be visible to the user.
+     * This can be completely
+     * removed in the real-world application
+     * */
+    private void populateDevOptions() {
+        final NextPinAPI api = NextPinAPI.getAPI(getActivity(),
+                NextPin.getToken(getActivity()), NextPin.getProjectToken(
+                        getActivity()));
+        if (!api.isDeveloperInstance()){
+            return;
+        }
+
+        try {
+            PreferenceCategory category = new PreferenceCategory(getActivity());
+            category.setTitle("Developer's options");
+            this.getPreferenceScreen().addPreference(category);
+
+            ListPreference serverListPref = new ListPreference(getActivity());
+            serverListPref.setKey(PREF_DEV_SERVER);
+            HashMap<String,String> servers = api.getAvailabelServers(getActivity());
+
+            int size = servers.keySet().size();
+            serverListPref.setTitle("Server URL");
+            serverListPref.setSummary("Currently: " + api.getBaseServer());
+            serverListPref.setPersistent(true);
+
+            serverListPref.setEntries(servers.keySet().toArray(new String[size]));
+            serverListPref.setEntryValues(servers.values().toArray(new String[size]));
+
+            category.addPreference(serverListPref);
+
+            serverListPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    if (preference.getKey().equals(PREF_DEV_SERVER)){
+                        try {
+                            api.setDeveloperServer(getActivity(), (String) newValue);
+                            preference.setSummary("Currently: "+api.getBaseServer());
+                        }catch (Exception e){
+                            GeneralLib.reportCrash(e, null);
+                        }
+                        return true;
+                    }
+                    return true;
+                }
+            });
+
+        }catch (Exception e){
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        Log.d(TAG, "preference changed: " + preference + ", val: " + newValue);
+        if (preference.getKey().equals(PREF_TOKEN)){
+            String token = (String)newValue;
+            String projToken = NextPin.getProjectToken(getActivity());
+            setTokenPrefSummary(preference,token, projToken);
+
+            NextPin.setToken(token, getActivity());
+            NextPinAPI api = NextPinAPI.getAPI(
+                    getActivity().getApplicationContext(), token, projToken);
+            api.resetSession();
+            return true;
+        }
+        return true;
+    }
+
+    /**
+     * Sets the summary of the preference, to show proper URL
+     * @param _pref
+     * @param _token
+     */
+    private void setTokenPrefSummary(Preference _pref, String _token,
+                                     String _projToken)
+    {
+        NextPinAPI api = NextPinAPI.getAPI(getActivity().getApplicationContext(),
+                _token, _projToken);
+        String server = api.getBaseServer();
+        String url ="http://"+server+"/?user="+_token;
+        String summaryStr = getActivity().getString(R.string.pref_token_summary, url);
+        _pref.setSummary(summaryStr);
+    }
+}

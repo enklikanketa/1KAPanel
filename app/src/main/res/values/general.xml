@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="server_url" translatable="false">https://your.server.com/</string>
+
+    <!-- Link to your feedback survey -->
+    <string name="feedbackLink" translatable="false">https://your.server.com/a/6110</string>
+
+    <!-- id of "app is tracking you" notification -->
+    <!-- id of "GPS off" notification -->
+    <integer name="GPS_notification_id" translatable="false">768431489</integer>
+
+    <!-- nextPin Activity type names -->
+
+    <!-- GEOFENCING -->
+    <string name="geofence_id_prefix" translatable="false">1kapanel_</string>
+    <!-- Error strings -->
+    <string name="geofence_not_available" translatable="false">Geofence service is not available now</string>
+    <string name="geofence_too_many_geofences" translatable="false">Your app has registered too many geofences</string>
+    <string name="geofence_too_many_pending_intents" translatable="false">
+        You have provided too many PendingIntents to the addGeofences() call
+    </string>
+    <string name="unknown_geofence_error" translatable="false">
+        Unknown error: the Geofence service is not available now
+    </string>
+</resources>

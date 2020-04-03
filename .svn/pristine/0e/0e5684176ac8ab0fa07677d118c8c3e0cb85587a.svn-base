@@ -1,0 +1,254 @@
+package enklikanketa.com.a1kapanel.Receivers;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+
+import org.json.JSONArray;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+
+import enklikanketa.com.a1kapanel.Libraries.AlarmLib;
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.Libraries.NotificationLib;
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.System.Database;
+
+/**
+ * Created by podkrizniku on 27/11/2017.
+ */
+
+public class AlarmReceiver extends BroadcastReceiver {
+    private String TAG = "AlarmReceiver";
+    private Context ctx;
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        ctx = context;
+        int howManyNew = 0;
+        //if (isInHourRange(900, 2100)) {
+        //checkes whether the current time is between 14:49:00 and 20:11:13.
+
+        Bundle bundle = intent.getExtras();
+        HashMap<String, String> data = new HashMap<>();
+        if (bundle != null) {
+            //get data of repeater
+            HashMap<String, String> repeater = new Database(ctx).getRowHashMapData("repeaters",
+                    new String[]{"repeat_by", "time_in_day", "day_in_week", "every_which_day",
+                            "datetime_start", "datetime_last_check"},
+                    "srv_id=" + bundle.getString("srv_id"));
+
+            String[] repeaterrow = new Database(ctx).getRowData("repeaters",
+                    new String[]{"repeat_by", "time_in_day", "day_in_week", "every_which_day", "datetime_last_check"},
+                    "srv_id=" + bundle.getString("srv_id"));
+
+            if(repeater != null)
+                howManyNew = countSurveysFromLastCheck(repeater);
+
+            if(howManyNew > 0) {
+                data.put("link", "survey_list");
+                //data.put("link", bundle.getString("link"));
+                data.put("title", ctx.getString(R.string.default_alarm_notification_title, howManyNew));
+                data.put("message", bundle.getString("message"));
+                data.put("sound", bundle.getString("sound"));
+                data.put("sender_id", bundle.getString("sender_id"));
+
+                NotificationLib nlib = new NotificationLib(ctx);
+                nlib.showNotificationSurvey(data);
+            }
+        }
+        //}
+    }
+
+    /**
+     * Create and run alarm fo this alarm id/broadcast request code
+     * If alarm for this id already exists, this will update it, if not it will create it
+     *
+     * @param data data of alarm
+     */
+    private int countSurveysFromLastCheck(HashMap<String, String> data) {
+        //Log.d(TAG, "wewe data1 "+data.toString());
+        long triggerAtMillis = 0, intervalMillis = 0, oneDayMillis = 86400000, oneWeekMillis = 604800000;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        long timestamp_last_check = 0;
+        int howManyNew = 0;
+        try {
+            if(!data.get("datetime_last_check").equals("null") && data.get("datetime_last_check") != null) {
+                timestamp_last_check = sdf.parse(data.get("datetime_last_check")).getTime()/1000;
+                //Log.d(TAG, "wewe data.get(datetime_last_check)1 " + data.get("datetime_last_check"));
+            }
+            else {
+                String datetime_start = data.get("datetime_start");
+                timestamp_last_check = sdf.parse(datetime_start).getTime()/1000;
+            }
+        }catch(ParseException e){
+            Log.e(TAG, "AlarmReceiver.countSurveysFromLastCheck() timestamp_last_check - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+
+        Date d0 = new Date();
+        d0.setTime(timestamp_last_check);
+        String Time0 = sdf.format(d0);
+        //Log.d(TAG, "wewe timestamp_last_check "+Time0);
+
+        long timestamp_now = System.currentTimeMillis()/1000;
+
+        //get current time in HHmm string
+        Date d = new Date();
+        d.setTime(timestamp_now*1000);
+        String currentTime = sdf.format(d);
+        //Log.d(TAG, "wewe currentTime "+currentTime);
+
+        Calendar midnightLastCheck = Calendar.getInstance();
+        midnightLastCheck.setTimeInMillis(timestamp_last_check*1000);
+        // reset hour, minutes, seconds and millis
+        midnightLastCheck.set(Calendar.HOUR_OF_DAY, 0);
+        midnightLastCheck.set(Calendar.MINUTE, 0);
+        midnightLastCheck.set(Calendar.SECOND, 0);
+        midnightLastCheck.set(Calendar.MILLISECOND, 0);
+        long midnightLastCheckSeconds = midnightLastCheck.getTimeInMillis()/1000;
+
+        Date date = new Date();
+        date.setTime(timestamp_last_check*1000);
+        String lastCheckTime = sdf.format(date);
+        //Log.d(TAG, "wewe lastCheckTime "+lastCheckTime);
+
+        switch (data.get("repeat_by")) {
+            case "everyday":
+
+                long timestamp_temp = midnightLastCheckSeconds;
+                ArrayList<String> time_in_day_arr = jsonStringToArray(data.get("time_in_day"));
+                //nekako izracunaj intervale med time_in_day v ms, da jih bos lahko potem samo dodajal k timestamp_temp - daj jih v array
+                ArrayList<Long> interval_arr = timeInDayToMillisIntervals(time_in_day_arr);
+                //Log.d(TAG, "wewe all "+timestamp_temp+" "+timestamp_last_check+" "+timestamp_now);
+                //nastavi timestamp na last_check ob 00:00 in dodajaj te intervale dokler ne prides cez dejanski last_check - tako dobis cas prvega notificationa po last checku
+
+                //ko pridez cez last check, preveri ce si cez timestamp_now, ce da, ni novih, ce ne, loopaj in sestevaj dokler ni cez timestamp_now
+                while (timestamp_temp < timestamp_now) {
+                    for (long interval : interval_arr) {
+                        timestamp_temp += interval/1000;
+                        //Log.d(TAG, "wewe new timestamp_temp "+timestamp_temp);
+                        if(timestamp_temp > timestamp_last_check && timestamp_temp <= timestamp_now) {
+                            howManyNew++;
+                            //Log.d(TAG, "wewe JE ");
+                        }
+
+                        Date d1 = new Date();
+                        d1.setTime(timestamp_temp*1000);
+                        String Time1 = sdf.format(d1);
+                        //Log.d(TAG, "wewe timestamp_temp "+Time1);
+                        Date d2 = new Date();
+                        d2.setTime(timestamp_last_check*1000);
+                        String Time2 = sdf.format(d2);
+                        //Log.d(TAG, "wewe timestamp_last_check "+Time2);
+                        Date d3 = new Date();
+                        d3.setTime(timestamp_now*1000);
+                        String Time3 = sdf.format(d3);
+                        //Log.d(TAG, "wewe timestamp_now "+Time3);
+                    }
+                }
+                Log.d(TAG, "wewe howManyNew "+howManyNew);
+                break;
+            /*case "daily":
+                int every_which_day = Integer.valueOf(data.get("every_which_day"));
+                //get millis to trigger alarm
+                triggerAtMillis = millisToTimeInDay(currentTime, data.get("time_in_day")) + (every_which_day * oneDayMillis);
+                //24 hours * every_which_day in ms
+                intervalMillis = oneDayMillis * every_which_day;
+                break;
+            case "weekly":
+                //which day in week is today
+                int dayInWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+                //convert start of week from sunday to monday
+                dayInWeek = (dayInWeek != 1) ? dayInWeek - 1 : 7;
+
+                //how many days is from today to alarm day of week (days rounded up)
+                int daysToAdd = (Integer.valueOf(data.get("day_in_week")) - dayInWeek + 7) % 7;
+
+                //if time of day is not reachable today, subtract one day - If now is Monday and 15:00
+                //and alarm must be triggered at Thursday at 11:00, alarm must be first triggered
+                //in 2 days (2*24 hours) + 20 hours (from monday to thursday is 3 days)
+                if (!isTimeReachableToday(currentTime, data.get("time_in_day"))) {
+                    //if alarm is for today and we are past this time, alarm has to start in 6 days + rest of time
+                    if (daysToAdd == 0)
+                        daysToAdd = 6;
+                        //remove a day, we are past this time
+                    else
+                        daysToAdd--;
+                }
+
+                //get millis to trigger alarm
+                triggerAtMillis = millisToTimeInDay(currentTime, data.get("time_in_day")) + (daysToAdd * oneDayMillis);
+
+                //one week in ms
+                intervalMillis = oneWeekMillis;
+                break;*/
+        }
+        return howManyNew;
+    }
+
+    /**
+     * Calculate intervals of gasp in milliseconds between time_in_day array
+     * @param time_in_day_arr - string array of time_in_day HHmm
+     * @return - Long array of gasp intervals between time_in_day, first is between first end second
+     *      of today, last is between last of today and first of tomorrow
+     */
+    private ArrayList<Long> timeInDayToMillisIntervals(ArrayList<String> time_in_day_arr){
+        ArrayList<Long> interval_arr = new ArrayList<>();
+        AlarmLib alib = new AlarmLib(ctx);
+        for (int i = 0; i < time_in_day_arr.size(); i++) {
+            if(i != time_in_day_arr.size()-1) {
+                interval_arr.add(alib.millisToTimeInDay(time_in_day_arr.get(i), time_in_day_arr.get(i + 1)));
+            }
+            else {
+                interval_arr.add(alib.millisToTimeInDay(time_in_day_arr.get(i), time_in_day_arr.get(0)));
+            }
+        }
+        return interval_arr;
+    }
+
+    /**
+     * Converts String in shape of JSON to ArrazList and sort it ascending
+     * @param jsonString - json string to convert
+     * @return - ArrayList - converted json string
+     */
+    ArrayList<String> jsonStringToArray(String jsonString) {
+        ArrayList<String> stringArray = new ArrayList<>();
+        try {
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                stringArray.add(jsonArray.getString(i));
+            }
+
+            Collections.sort(stringArray);
+        }catch (Exception e){
+            Log.e(TAG, "AlarmReceiver.jsonStringToArray Exception: "+e);
+            GeneralLib.reportCrash(e, null);
+        }
+        return stringArray;
+    }
+
+    /**
+     * Check if now is in range in from - to hour (ex. 800 is 8:00; 840 is 8:40)
+     *
+     * @param from - start time hour*100 + minutes
+     * @param to   - end time hour*100 + minutes
+     * @return true if now is in range, false otherwise
+     */
+    private boolean isInHourRange(int from, int to) {
+        Date date = new Date();
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        int t = c.get(Calendar.HOUR_OF_DAY) * 100 + c.get(Calendar.MINUTE);
+        return to > from && t >= from && t <= to || to < from && (t >= from || t <= to);
+    }
+}

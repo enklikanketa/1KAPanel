@@ -1,0 +1,425 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.PendingIntent;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.location.Location;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.support.v13.app.FragmentStatePagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.google.android.gms.location.DetectedActivity;
+
+import net.nextpin.geolib.NextPin;
+import net.nextpin.geolib.NextPinListener;
+import net.nextpin.geolib.types.GeoActivity;
+import net.nextpin.geolib.types.GeoRecord;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+
+import enklikanketa.com.a1kapanel.Libraries.ActivityLib;
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.Libraries.SharedPrefUtils;
+import enklikanketa.com.a1kapanel.Libraries.TrackingLib;
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.System.Network;
+import enklikanketa.com.a1kapanel.Tasks.sendSetNextpinTrackingPermission;
+import enklikanketa.com.a1kapanel.Tasks.sendSetTrackingPermission;
+
+public class MyActivity extends AppCompatActivity implements NextPinListener {
+
+    private String TAG = "MyActivity";
+    NextPin nextPin;
+    //TextView tvPermissionsProblem;
+    TextView /*tokenView,*/ lastARView;
+
+    ScreenSlidePagerAdapter mPagerAdapter;//holds the flip/left/right pages
+    OneDayFragment todaysFragment;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.my_activity);
+
+        // Instantiate a ViewPager and a PagerAdapter.
+        ViewPager mPager = findViewById(R.id.pager);
+        mPagerAdapter = new ScreenSlidePagerAdapter(getFragmentManager());
+        mPager.setAdapter(mPagerAdapter);
+        mPager.setCurrentItem(mPagerAdapter.getCount()-1,true);
+
+        //request for permission which app needs it
+        //tvPermissionsProblem = (TextView) findViewById(R.id.tvPermissionsProblem);
+        //tokenView = (TextView) findViewById(R.id.tokenView);
+        lastARView = findViewById(R.id.lastARView);
+        /*tvPermissionsProblem.setMovementMethod(LinkMovementMethod.getInstance());
+        tvPermissionsProblem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NextPin.requestPermissions(Home.this);
+            }
+        });*/
+
+        //check for alarms and run it (alarms are not running in case of force-stop app)
+        /*AlarmLib alib = new AlarmLib(this);
+        alib.checkAndRunAlarms();*/
+
+        nextPin = NextPin.getNextPinInstance(this);
+
+        //if you want to track cordinates/accelerometer and other things you can
+        if(!nextPin.isStarted()) {
+            //run nextpin if there are subscribed surveys using it
+            ActivityLib aclib = new ActivityLib(this);
+            if(aclib.areActivityPermissionGrantedAndRunning()) {
+                aclib.startNextpin("my_activity_opened");
+            }
+        }
+
+        TrackingLib tlib = new TrackingLib(this);
+        //if you want to track cordinates/accelerometer and other things you can
+        if(!tlib.serviceIsRunningInForeground()) {
+            //run tracking if there are subscribed surveys using it
+            if(tlib.areTrackingPermissionGrantedAndRunning()) {
+                tlib.startTracking("my_activity_opened");
+            }
+        }
+
+        //just show notification if user shut down gps
+        //nextPin.setNotificationGpsOff(true, R.mipmap.ic_launcher, Main.class);
+        //add standard listeners
+        nextPin.addListener(this);
+
+        //get identifier and set nextpinToken for user
+        Database DB = (Database) Database.getInstance(this);
+        String[] uporabnik = DB.getRowData("uporabnik",
+                new String[]{"identifier"}, null);
+        if(uporabnik != null) {
+            //if you dont define unique token for specific person/object you cant get data
+            setNextPinToken(uporabnik[0]);
+            //tokenView.setText("Your token: " + getString(R.string.nextPin_project_name) + "_" + uporabnik[0]);
+        }
+        //without login - create token
+        else {
+            //if token is non-existent, put in the unique phone ID
+            String nextPinToken = SharedPrefUtils.getString(getApplicationContext(),
+                    PreferencesFragment.PREF_TOKEN);
+            if (nextPinToken == null || nextPinToken.isEmpty()) {
+                String android_id = Settings.Secure.getString(this.getContentResolver(),
+                        Settings.Secure.ANDROID_ID);
+                SharedPrefUtils.setString(this, PreferencesFragment.PREF_TOKEN, android_id);
+                //Log.i(TAG, "user token set to: " + android_id);
+            }
+        }
+
+        showNonPermissionedActivity();
+        showNonPermissionedTracking();
+
+        //AR
+        /*broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction() != null && intent.getAction().equals(ActivityLib.AR_BROADCAST_DETECTED_ACTIVITY)) {
+                    int type = intent.getIntExtra("type", -1);
+                    int confidence = intent.getIntExtra("confidence", 0);
+                    //new ActivityLib(MyActivity.this).handleUserActivity(type, confidence);
+                }
+            }
+        };*/
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                Intent myIntent = new Intent(MyActivity.this, Home.class);
+                //myIntent.putExtra("id_vprasalnika", id_ankete);
+                if (Network.checkMobileInternet(MyActivity.this, true))
+                    finish();
+                break;
+        }
+        return true;
+    }
+
+    /**
+     * Set token for this user for nextPin library
+     * @param identifier - identifier seted for this user
+     */
+    private void setNextPinToken(String identifier){
+        String full_token = getString(R.string.nextPin_project_name)+"_"+identifier;
+        //if you dont define unique token for specific person/object you cant get data
+        nextPin.setToken(full_token);
+        SharedPrefUtils.setString(this,PreferencesFragment.PREF_TOKEN, full_token);
+    }
+
+    private boolean isNotificationVisible() {
+        Intent notificationIntent = new Intent(this, MyActivity.class);
+        PendingIntent test = PendingIntent.getActivity(this, 659544597, notificationIntent, PendingIntent.FLAG_NO_CREATE);
+        return test != null;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //check whether all permissions are intact
+        /*String missingPermissionsStr = NextPin.checkForMissingPermissions(Home.this);
+        if (!"".equals(missingPermissionsStr)) {
+            Log.d(TAG, "Problem with permissions!");
+            tvPermissionsProblem.setVisibility(View.VISIBLE);
+            missingPermissionsStr += " <a href=\"#\">Click Here</a>";
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                tvPermissionsProblem.setText(Html.fromHtml(missingPermissionsStr, Html.FROM_HTML_MODE_LEGACY));
+            } else {
+                tvPermissionsProblem.setText(Html.fromHtml(missingPermissionsStr));
+            }
+        } else {
+            //if the permissions are ok now, remove this view.
+            tvPermissionsProblem.setVisibility(View.GONE);
+        }*/
+
+        /*LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+                new IntentFilter(TrackingLib.AR_BROADCAST_DETECTED_ACTIVITY));*/
+
+        if(nextPin!=null){
+            nextPin.registerReceivers();}
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            if (nextPin != null)
+                nextPin.unregisterReceivers();
+        }
+        catch (Exception e){
+            Log.d(TAG, "MyActivity onPause Exception "+e);
+        }
+
+        //LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onLocalLocationDetected(Location location) {
+        //last detected location in library
+    }
+
+    @Override
+    public void onDBChangeDetected(int i) {
+    }
+
+    @Override
+    public void onLastSentLocation(Location location) {
+        //last location which was send on server
+    }
+
+    @Override
+    public void onWakeUp() {
+        //library wakes to retrieve new data.
+    }
+
+    @Override
+    public void onLastRejectedLocation(Location location) {
+        //last rejected location
+    }
+
+    @Override
+    public void onNewStayPoint() {
+        //maybe you need to update list of stay points
+    }
+
+    @Override
+    public void onEditStaypPoint() {
+    }
+
+    @Override
+    public void onSensorAct(DetectedActivity da) {
+        GeoRecord.NextPinSensorActivity nextPinAct =
+                GeoRecord.NextPinSensorActivity.valueOfAndroid(da.getType());
+
+        Log.d(TAG, "nextPinAct "+nextPinAct);
+
+
+        SimpleDateFormat s = new SimpleDateFormat("dd.MM. hh:mm:ss");
+        String format = s.format(new Date());
+
+        lastARView.setText(nextPinAct.toString()+" "+format);
+
+        if (todaysFragment != null){
+            todaysFragment.setCurrentActivity(nextPinAct);
+        }
+    }
+
+    @Override
+    public void onGeoActivityUpdate(GeoActivity ga) {
+        Log.d(TAG, "GeoActivity "+ga);
+
+        //lastARView.append(ga.toString()+"\n\n");
+    }
+
+    /**
+     * Page adapter that constructs 1 day view fragment per page
+     */
+    private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
+        private int COUNT = 62;//enough for 2 months
+        public ScreenSlidePagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            Log.d(TAG, "item number: " + position);
+            //calculate how many days in the past, based on the inverted
+            // position (COUNT = today)
+            int dayDiff = COUNT - 1 - position;
+
+            OneDayFragment f = new OneDayFragment();
+            Bundle bdl = new Bundle(2);
+            bdl.putInt(OneDayFragment.ARG_DAY_OFFSET, dayDiff);
+
+            f.setArguments(bdl);
+            if (dayDiff == 0){
+                todaysFragment = f;
+            }
+            return f;
+        }
+
+        @Override
+        public int getCount() {
+            return COUNT;
+        }
+    }
+
+    /**
+     * Check if user did not permit nextpin activity tracking and show alert
+     */
+    private void showNonPermissionedActivity() {
+        Database DBH = (Database) Database.getInstance(this);
+        ArrayList<HashMap<String, String>> actList = DBH.getListHashMapData("activities", new String[] {"notif_title", "srv_id"}, "permission=0", null);
+
+        if(actList != null)
+            for(HashMap<String, String> act : actList){
+                //get title of survey
+                String[] srv_title = DBH.getRowData("surveys", new String[]{"title"}, "id="+act.get("srv_id"));
+                activityPermissionDialog(srv_title[0], act.get("srv_id"));
+            }
+    }
+
+    /**
+     * Check if user did not permit tracking and show alert
+     */
+    private void showNonPermissionedTracking() {
+        Database DBH = (Database) Database.getInstance(this);
+        ArrayList<HashMap<String, String>> actList = DBH.getListHashMapData("tracking", new String[] {"srv_id"}, "permission=0", null);
+
+        if(actList != null)
+            for(HashMap<String, String> act : actList){
+                //get title of survey
+                String[] srv_title = DBH.getRowData("surveys", new String[]{"title"}, "id="+act.get("srv_id"));
+                trackingPermissionDialog(srv_title[0], act.get("srv_id"));
+            }
+    }
+
+    /**
+     * Show dialog, for showing permission for tracking
+     *
+     * @param title - title of sirvey
+     * @param srv_id - survey id
+     */
+    private void activityPermissionDialog(String title, final String srv_id) {
+        final AlertDialog myDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.nextpinActivity)
+                .setMessage(GeneralLib.fromHtml(getString(R.string.nextpinActivity_desc, title)))
+                .setNegativeButton(R.string.unsubscribe, null)
+                .setPositiveButton(R.string.iagree, null).create();
+
+        myDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+            @Override
+            public void onShow(DialogInterface dialog) {
+
+                Button btne = myDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                btne.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        myDialog.dismiss();
+                        new sendSetNextpinTrackingPermission(MyActivity.this, srv_id, "0").execute();
+                    }
+                });
+
+                Button btpo = myDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                btpo.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        myDialog.dismiss();
+                        new sendSetNextpinTrackingPermission(MyActivity.this, srv_id, "1").execute();
+                    }
+                });
+            }
+        });
+        myDialog.show();
+    }//end of permission
+
+    /**
+     * Show dialog, for showing permission for tracking
+     *
+     * @param title - title of sirvey
+     * @param srv_id - survey id
+     */
+    private void trackingPermissionDialog(String title, final String srv_id) {
+        final AlertDialog myDialog = new AlertDialog.Builder(this)
+                .setTitle("TRACKING")
+                .setMessage(GeneralLib.fromHtml(getString(R.string.nextpinActivity_desc, title)))
+                .setNegativeButton(R.string.unsubscribe, null)
+                .setPositiveButton(R.string.iagree, null).create();
+
+        myDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+            @Override
+            public void onShow(DialogInterface dialog) {
+
+                Button btne = myDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                btne.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        myDialog.dismiss();
+                        new sendSetTrackingPermission(MyActivity.this, srv_id, "0").execute();
+                    }
+                });
+
+                Button btpo = myDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                btpo.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+                        myDialog.dismiss();
+                        new sendSetTrackingPermission(MyActivity.this, srv_id, "1").execute();
+                    }
+                });
+            }
+        });
+        myDialog.show();
+    }//end of permission
+}

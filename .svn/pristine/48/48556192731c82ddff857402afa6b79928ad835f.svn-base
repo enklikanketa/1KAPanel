@@ -1,0 +1,19 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import java.util.Random;
+
+/**
+ * Created by podkrizniku on 06/12/2017.
+ */
+
+public class GeneralLib {
+
+    /**
+     * Creates random integer. Best for random int IDs
+     * @return integet in range of 1000000 to 2147483646
+     */
+    public static int getRandomInt(){
+        Random r = new Random();
+        return r.nextInt(2147483646-1000000) + 1000000;
+    }
+}

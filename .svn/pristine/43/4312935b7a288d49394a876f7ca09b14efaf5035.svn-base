@@ -1,0 +1,84 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+class sendNextPinEditTask extends AsyncTask<String, String, String> {
+
+    private ProgressDialog loader;
+    private Activity ctx;
+    private int activity_id;
+    private JSONObject json;
+    private String action;
+
+    // This is the reference to the associated listener
+    private final TaskListener taskListener;
+
+    sendNextPinEditTask(Activity context, int activity_id, JSONObject json, String action,
+                        TaskListener listener) {
+
+        ctx = context;
+        this.activity_id = activity_id;
+        this.taskListener = listener;
+        this.json = json;
+        this.action = action;
+    }
+
+    public interface TaskListener {
+        void onFinished(String result);
+    }
+
+    protected String doInBackground(String... urls) {
+
+        String response = null;
+        if(action.equals("editGeoActivity"))
+            response = ServerCommunication.PostNextPinGeoActivityEdit(ctx, json, activity_id, action);
+        else if(action.equals("editFrequent"))
+            response = ServerCommunication.PostNextPinFrequentEdit(ctx, json, action);
+
+        //Log.d("1kapanel", "response "+response);
+
+        return response;
+    }
+
+    protected void onPostExecute(String result) {
+        //TODO naredi kot v hitra1ka varnostno zapiranje
+        loader.dismiss();
+
+        if (result != null) {
+            try {
+                JSONObject linkobj = new JSONObject(result);
+
+                if (linkobj.has("message") && linkobj.getString("message").equals("ok") ||
+                        linkobj.getString("message").equals("Success")) {
+                    if(this.taskListener != null) {
+
+                        // And if it is we call the callback function on it.
+                        this.taskListener.onFinished(result);
+                    }
+                } else {
+                    GeneralLib.reportCrash(new Exception("sendNextPinEditTask message not ok"), result);
+                }
+            } catch (JSONException e) {
+                //Log.e("1kapanel", "sendActivityEditTask onPostExecute(): " + e);
+                GeneralLib.reportCrash(e, result);
+            }
+        }
+        //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+        else {
+            GeneralLib.showErrorToUser(ctx, ctx.getString(R.string.general_remote_server_error));
+        }
+    }
+
+    protected void onPreExecute() {
+        //nastavi progressdialog
+        loader = ProgressDialog.show(ctx, "", ctx.getText(R.string.sendingRequest).toString(), true);
+    }
+}

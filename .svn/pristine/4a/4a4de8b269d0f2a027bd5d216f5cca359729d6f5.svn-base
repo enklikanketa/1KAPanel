@@ -1,0 +1,322 @@
+package enklikanketa.com.a1kapanel;
+
+import android.content.Intent;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
+import android.widget.ProgressBar;
+
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.System.Network;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+public class Main extends AppCompatActivity {
+
+    Button poskusiZnovaB;
+    ProgressBar progressBar;
+    SQLiteOpenHelper DBH;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.main);
+
+        DBH = new Database(this);
+        //preveri bazo - ce je za posodobiti
+        DBH.getWritableDatabase();
+        //check if there is new device info, if yes, update DB
+        newDeviceInfo();
+
+        poskusiZnovaB = (Button) findViewById(R.id.button_poskusi_znova);
+        poskusiZnovaB.setOnClickListener(poskusiZnovaClick);
+        progressBar = (ProgressBar) findViewById(R.id.main_progressBar);
+
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d("a1kapanel", " token: " + refreshedToken);
+
+        FirebaseMessaging.getInstance().subscribeToTopic("1katest");
+    }
+
+    //gumb poskusi znova
+    View.OnClickListener poskusiZnovaClick = new View.OnClickListener() {
+        public void onClick(View v) {
+
+            poskusiZnovaB.setVisibility(View.GONE);
+            progressBar.setVisibility(View.VISIBLE);
+
+            //preveri, ce je internet - poskusi se logirat
+            checkInternet();
+        }
+    };
+
+    /**
+     * Check if connected to web and send login data to server
+     */
+    private void checkInternet() {
+        //preveri, ce je vzpostavljena povezava
+        if (Network.checkMobileInternet(Main.this, true)) {
+            //poskusi se logirati
+            new LoginTask().execute();
+        }
+        //mobilno omrezje ni dosegljivo
+        else {
+            poskusiZnovaB.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    //DEVICE INFO FUNCTIONS
+    /**
+     * Check if there is new device info (in case OS is updated)
+     */
+    private void newDeviceInfo() {
+        //SQLiteDatabase DB = new Database(this).getWritableDatabase();
+        //get release from DB
+        String[][] release = Database.getPairData(DBH, "device_info", new String[]{"value"}, "name='release'");
+        //if release from DB is not equal to actual, update device info in DB
+        if (release != null && !android.os.Build.VERSION.RELEASE.equals(release[0][0])) {
+            Database.updateData(DBH, "device_info", Database.convertToValues(
+                    new String[][]{{"value", System.getProperty("os.version") + ""}}), "name='os_version'");
+            Database.updateData(DBH, "device_info", Database.convertToValues(
+                    new String[][]{{"value", android.os.Build.VERSION.INCREMENTAL + ""}}), "name='incremental'");
+            Database.updateData(DBH, "device_info", Database.convertToValues(
+                    new String[][]{{"value", android.os.Build.VERSION.SDK_INT + ""}}), "name='sdk_int'");
+            Database.updateData(DBH, "device_info", Database.convertToValues(
+                    new String[][]{{"value", android.os.Build.VERSION.RELEASE + ""}}), "name='release'");
+        }
+    }
+
+    /**
+     * Get string of device data
+     *
+     * @return string for device data ready to put int in textview
+     */
+    public String getDeviceInfoString() {
+        //SQLiteDatabase DB = new Database(this).getWritableDatabase();
+        String s = "";
+        String[][] data = Database.getPairData(DBH, "device_info", new String[]{"name", "value"}, null);
+        if (data != null)
+            for (String[] row : data)
+                s += /*"\n" +*/ row[0] + ": " + row[1] + "; ";
+
+        return s;
+    }
+
+    // razred Work uporabljen, da deluje progressbar med loadanjem - Logiranje
+    private class DeviceInfoTask extends AsyncTask<Object, Object, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Log.d("1kapanel", "result di" + result);
+
+            if (result != null) {
+                try {
+                    JSONObject obj = new JSONObject(result);
+
+                    if (obj.has("note")) {
+
+                    } else {
+
+                    }
+
+                } catch (JSONException e) {
+                    Log.e("1kapanel", "Main.class onPostExecute(): " + e);
+                    //generalLib.reportCrash(e, result);
+                }
+            }
+            //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+            else {
+
+            }
+        }
+
+        @Override
+        protected String doInBackground(Object... params) {
+            return postDeviceInfo();
+        }
+    }
+
+    private String postDeviceInfo() {
+        //pobere podatke o uporabniku iz baze
+        String[] uporabnik = Database.getRowData(DBH, "uporabnik",
+                new String[]{"identifier", "id_server"}, null);
+
+        // poslji
+        JSONObject object = new JSONObject();
+
+        if(uporabnik != null) {
+            // uporabnik prijavljen
+            try {
+                JSONObject logIn = new JSONObject();
+                logIn.put("identifier", uporabnik[0]);
+                logIn.put("id_server", uporabnik[1]);
+                object.put("Login", logIn);
+
+                object.put("deviceInfo", getDeviceInfoString());
+
+            } catch (JSONException e) {
+                Log.e("1kapanel", "Or could not parse malformed JSON: \"" + object.toString() + "\"");
+            }
+
+            return ServerCommunication.PostDeviceInfo(Main.this, object);
+        }
+        return null;
+    }
+    //END OF FUNCTIONS FOR DEVICE IFNO
+
+    // razred Work uporabljen, da deluje progressbar med loadanjem - Logiranje
+    private class LoginTask extends AsyncTask<Object, Object, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Log.d("1kapanel", "result " + result);
+
+            if (result != null) {
+                    try {
+                        JSONObject obj = new JSONObject(result);
+
+                        if (obj.has("note")) {
+                            if (obj.getString("note").equals("login OK")) {
+                                /*if (obj.has("version") && !isLastVersion(obj.getString("version"))
+                                        && getString(R.string.server_url).equals(getString(R.string.test_server_url)))
+                                    updateVersionAlert();
+                                else {*/
+
+                                if(obj.has("identifier") && obj.has("id_server"))
+                                    shraniUporabnika(obj.getString("identifier"), obj.getString("id_server"));
+
+                                if(obj.has("update") && obj.getString("update").equals("deviceInfo"))
+                                    new DeviceInfoTask().execute();
+
+                                Intent myIntent = new Intent(Main.this, Home.class);
+                                startActivity(myIntent);
+                                finish();
+                                //}
+                            }
+                        } else {
+                            /*if (obj.has("error")) {
+                                if (!generalLib.otherErrors(Main.this, obj.getString("error"))) {
+                                    generalLib.reportCrash(new Exception("Main.class onPostExecute() has error: "
+                                            + obj.getString("error")), null);
+                                }
+                            } else
+                                generalLib.reportCrash(new Exception("Main.class onPostExecute() has unknown response: "
+                                        + result), null);
+
+                            Intent myIntent = new Intent(Main.this, vpis.class);
+                            startActivity(myIntent);
+                            generalLib.finishNazaj(Main.this);*/
+                        }
+                    } catch (JSONException e) {
+                        Log.e("1kapanel", "Main.class onPostExecute(): " + e);
+                        //generalLib.reportCrash(e, result);
+                    }
+            }
+            //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+            else {
+                /*poskusiZnovaB.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(Main.this, Main.this.getString(com.FDV.1kapanel.R.string.general_remote_server_error)
+                        , Toast.LENGTH_LONG).show();*/
+            }
+        }
+
+        @Override
+        protected String doInBackground(Object... params) {
+            return postLoginMain();
+        }
+    }
+
+    private String postLoginMain() {
+        //pobere podatke o uporabniku iz baze
+        String[] uporabnik = Database.getRowData(DBH, "uporabnik",
+                new String[]{"identifier", "id_server"}, null);
+
+        // poslji
+        JSONObject object = new JSONObject();
+
+        String identifier = (uporabnik == null) ? "no_identifier" : uporabnik[0];
+        String id_server = (uporabnik == null) ? "" : uporabnik[1];
+
+        // uporabnik prijavljen
+        try {
+            JSONObject logIn = new JSONObject();
+            logIn.put("identifier", identifier);
+            logIn.put("id_server", id_server);
+            object.put("Login", logIn);
+
+        } catch (JSONException e) {
+            Log.e("1kapanel", "Or could not parse malformed JSON: \"" + object.toString() + "\"");
+        }
+
+        return ServerCommunication.PostLogin(Main.this, object);
+    }
+
+    /**
+     * Save user in user table, delete old data
+     *
+     * @param identifier - identifier of user
+     * @param id_server - id of user on server DB
+     */
+    private void shraniUporabnika(String identifier, String id_server) {
+
+        //ce tabela uporabniki ni prazna, jo pobrise
+        if (Database.stejData(DBH, "uporabnik", null) != 0) {
+            Database.deleteAllRows(DBH, "uporabnik");
+        }
+
+        //vstavi v tabelo novega uporabnika
+        Database.insertData(DBH, "uporabnik", new String[][]{
+                {"identifier", identifier},
+                {"id_server", id_server}});
+        /*{"identifier", "1OjI5E8C"},
+        {"id_server", "17"}});*/
+
+        /*Intent myIntent = new Intent(vpis.this, Main.class);
+        if (Network.checkMobileInternet(vpis.this, true)) {
+            startActivity(myIntent);
+            generalLib.finishNaprej(vpis.this, true);
+        }*/
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        checkInternet();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+}

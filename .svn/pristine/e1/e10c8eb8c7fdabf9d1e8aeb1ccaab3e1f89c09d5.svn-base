@@ -1,0 +1,263 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.preference.ListPreference;
+import android.preference.Preference;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceFragment;
+import android.util.Log;
+
+import net.nextpin.geolib.NextPin;
+import net.nextpin.geolib.http.NextPinAPI;
+
+import java.util.HashMap;
+
+import enklikanketa.com.a1kapanel.Libraries.ActivityLib;
+import enklikanketa.com.a1kapanel.Libraries.AlarmLib;
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.Libraries.GeofencingLib;
+import enklikanketa.com.a1kapanel.Libraries.TrackingLib;
+import enklikanketa.com.a1kapanel.Tasks.sendTrakingLocationsTask;
+
+
+/**
+ * Created by matejs on 1.12.2015.
+ */
+public class PreferencesFragment extends PreferenceFragment implements
+        Preference.OnPreferenceChangeListener
+{
+    public static final String PREF_TOKEN = "PREF_TOKEN";
+    public static final String PREF_DB_NUMBER = "PREF_DB_NUMBER";
+    public static final String PREF_TRACKING_NUMBER = "PREF_TRACKING_NUMBER";
+    public static final String PREF_START_STOP_ACTIVITY = "PREF_START_STOP_ACTIVITY";
+    public static final String PREF_START_STOP_TRACKING = "PREF_START_STOP_TRACKING";
+    public static final String PREF_REFRESH_ALARMS = "PREF_REFRESH_ALARMS";
+    public static final String PREF_REFRESH_GEOFENCES = "PREF_REFRESH_GEOFENCES";
+    public static final String PREF_REFRESH_ACTIVITIES = "PREF_REFRESH_ACTIVITIES";
+    public static final String PREF_REFRESH_TRACKING = "PREF_REFRESH_TRACKING";
+
+    // /DEV option
+    public static final String PREF_DEV_SERVER = "PREF_DEV_SERVER";
+
+    private static final String TAG = "PreferencesFragment";
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.preferences);
+
+        final Activity act = getActivity();
+        final NextPin nextPin = NextPin.getNextPinInstance(act);
+
+        Preference pref = findPreference(PREF_TOKEN);
+        pref.setOnPreferenceChangeListener(this);
+        setTokenPrefSummary(pref, NextPin.getToken(act),
+                NextPin.getProjectToken(act));
+        final Preference NextPinButton = findPreference(PREF_START_STOP_ACTIVITY);
+
+        if(!nextPin.isStarted()){
+            NextPinButton.setTitle(getString(R.string.Start_nextpin_Tracking));
+            NextPinButton.setSummary(getString(R.string.start_nextpin_desc));
+        }
+
+        NextPinButton.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                ActivityLib aclib = new ActivityLib(act);
+                if (NextPinButton.getTitle().equals(getString(R.string.Stop_nextpin_Tracking))){
+                    aclib.stopNextpin("user_preferences");
+
+                    NextPinButton.setTitle(getString(R.string.Start_nextpin_Tracking));
+                    NextPinButton.setSummary(getString(R.string.start_nextpin_desc));
+                    Log.d(TAG, "Stopping NextPin");
+                }
+                else{
+                    aclib.startNextpin("user_preferences");
+
+                    NextPinButton.setTitle(getString(R.string.Stop_nextpin_Tracking));
+                    NextPinButton.setSummary(getString(R.string.stop_nextpin_desc));
+                    Log.d(TAG, "Starting NextPin");
+                }
+                return true;
+            }
+        });
+
+        final Preference TrackingButton = findPreference(PREF_START_STOP_TRACKING);
+
+        final TrackingLib tlib = new TrackingLib(act);
+        if(!tlib.isCanTrack()){
+            TrackingButton.setTitle(getString(R.string.Start_Tracking));
+            TrackingButton.setSummary(getString(R.string.start_desc) + " ("+tlib.howManyTrackingPermissionGranted()+")");
+        }
+
+        TrackingButton.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+
+                if (TrackingButton.getTitle().equals(getString(R.string.Stop_Tracking))){
+                    tlib.setCanTrack(false);
+                    tlib.stopTracking("user_preferences");
+
+                    TrackingButton.setTitle(getString(R.string.Start_Tracking));
+                    TrackingButton.setSummary(getString(R.string.start_desc) + " ("+tlib.howManyTrackingPermissionGranted()+")");
+                    Log.d(TAG, "Stopping tracking");
+                }
+                else{
+                    tlib.setCanTrack(true);
+                    tlib.startTracking("user_preferences");
+
+                    TrackingButton.setTitle(getString(R.string.Stop_Tracking));
+                    TrackingButton.setSummary(getString(R.string.stop_desc) + " ("+tlib.howManyTrackingPermissionGranted()+")");
+                    Log.d(TAG, "Starting tracking");
+                }
+                return true;
+            }
+        });
+
+        final Preference refreshAlarms = findPreference(PREF_REFRESH_ALARMS);
+        refreshAlarms.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                AlarmLib al = new AlarmLib(act);
+                al.refreshAlarms();
+                return true;
+            }
+        });
+
+        final Preference refreshGeofences = findPreference(PREF_REFRESH_GEOFENCES);
+        refreshGeofences.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                GeofencingLib glib = new GeofencingLib(act);
+                glib.refreshGeofences();
+                return true;
+            }
+        });
+
+        final Preference refreshActivities = findPreference(PREF_REFRESH_ACTIVITIES);
+        refreshActivities.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                ActivityLib aclib = new ActivityLib(act);
+                aclib.refreshActivities();
+                return true;
+            }
+        });
+
+        final Preference refreshTracking = findPreference(PREF_REFRESH_TRACKING);
+        refreshTracking.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                tlib.refreshTracking();
+                return true;
+            }
+        });
+
+        final int lnum = tlib.getNumberOfUnsendedLocations();
+        final int anum = tlib.getNumberOfUnsendedAR();
+        final Preference sendTracking = findPreference(PREF_TRACKING_NUMBER);
+        sendTracking.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                if(lnum > 0 || anum > 0) {
+                    new sendTrakingLocationsTask(act).execute();
+                    sendTracking.setSummary(getString(R.string.pref_tracking_number_sum, 0, 0));
+                }
+                return true;
+            }
+        });
+        sendTracking.setSummary(getString(R.string.pref_tracking_number_sum, lnum, anum));
+
+        pref = findPreference(PREF_DB_NUMBER);
+        pref.setSummary(String.valueOf(nextPin.getOfflinceRecordsNumber()));
+
+        populateDevOptions();
+    }
+
+    /**
+     * Adds a developer's options. These should not be visible to the user.
+     * This can be completely
+     * removed in the real-world application
+     * */
+    private void populateDevOptions() {
+        final NextPinAPI api = NextPinAPI.getAPI(getActivity(),
+                NextPin.getToken(getActivity()), NextPin.getProjectToken(
+                        getActivity()));
+        if (!api.isDeveloperInstance()){
+            return;
+        }
+
+        try {
+            PreferenceCategory category = new PreferenceCategory(getActivity());
+            category.setTitle("Developer's options");
+            this.getPreferenceScreen().addPreference(category);
+
+            ListPreference serverListPref = new ListPreference(getActivity());
+            serverListPref.setKey(PREF_DEV_SERVER);
+            HashMap<String,String> servers = api.getAvailabelServers(getActivity());
+
+            int size = servers.keySet().size();
+            serverListPref.setTitle("Server URL");
+            serverListPref.setSummary("Currently: " + api.getBaseServer());
+            serverListPref.setPersistent(true);
+
+            serverListPref.setEntries(servers.keySet().toArray(new String[size]));
+            serverListPref.setEntryValues(servers.values().toArray(new String[size]));
+
+            category.addPreference(serverListPref);
+
+            serverListPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    if (preference.getKey().equals(PREF_DEV_SERVER)){
+                        try {
+                            api.setDeveloperServer(getActivity(), (String) newValue);
+                            preference.setSummary("Currently: "+api.getBaseServer());
+                        }catch (Exception e){
+                            GeneralLib.reportCrash(e, null);
+                        }
+                        return true;
+                    }
+                    return true;
+                }
+            });
+
+        }catch (Exception e){
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        Log.d(TAG, "preference changed: " + preference + ", val: " + newValue);
+        if (preference.getKey().equals(PREF_TOKEN)){
+            String token = (String)newValue;
+            String projToken = NextPin.getProjectToken(getActivity());
+            setTokenPrefSummary(preference,token, projToken);
+
+            NextPin.setToken(token, getActivity());
+            NextPinAPI api = NextPinAPI.getAPI(
+                    getActivity().getApplicationContext(), token, projToken);
+            api.resetSession();
+            return true;
+        }
+        return true;
+    }
+
+    /**
+     * Sets the summary of the preference, to show proper URL
+     * @param _pref
+     * @param _token
+     */
+    private void setTokenPrefSummary(Preference _pref, String _token,
+                                     String _projToken)
+    {
+        NextPinAPI api = NextPinAPI.getAPI(getActivity().getApplicationContext(),
+                _token, _projToken);
+        String server = api.getBaseServer();
+        String url ="http://"+server+"/?user="+_token;
+        String summaryStr = getActivity().getString(R.string.pref_token_summary, url);
+        _pref.setSummary(summaryStr);
+    }
+}

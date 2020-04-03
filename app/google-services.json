@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "271835672394",
+    "firebase_url": "https://kapanel-7ebd4.firebaseio.com",
+    "project_id": "kapanel-7ebd4",
+    "storage_bucket": "kapanel-7ebd4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271835672394:android:5637edb115e5da91",
+        "android_client_info": {
+          "package_name": "enklikanketa.com.a1kapanel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "271835672394-ls9qm1v8m8tgcdonn74i673mj0ofps4p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "enklikanketa.com.a1kapanel",
+            "certificate_hash": "19f4a14e9984de455982b5867da3736c282692a3"
+          }
+        },
+        {
+          "client_id": "271835672394-a0fe6grvr1aj6o72p983t8fm539p0b6o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAK8ZOt89LiTtW7D4Ax3rw2lAJHZ6InpXE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "271835672394-a0fe6grvr1aj6o72p983t8fm539p0b6o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

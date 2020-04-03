@@ -1,0 +1,53 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Service;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.IBinder;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+public class LocalWordService extends Service {
+    private final IBinder mBinder = new MyBinder();
+    private List<String> resultList = new ArrayList<String>();
+    private int counter = 1;
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d("1kapanel", "wewe LocalWordService onStartCommand");
+        addResultValues();
+        return Service.START_NOT_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.d("1kapanel", "wewe LocalWordService onBind");
+        addResultValues();
+        return mBinder;
+    }
+
+    public class MyBinder extends Binder {
+        LocalWordService getService() {
+            Log.d("1kapanel", "wewe LocalWordService getService");
+            return LocalWordService.this;
+        }
+    }
+
+    public List<String> getWordList() {
+        Log.d("1kapanel", "wewe LocalWordService getWordList");
+        return resultList;
+    }
+
+    private void addResultValues() {
+        Log.d("1kapanel", "wewe LocalWordService addResultValues");
+        Random random = new Random();
+        List<String> input = Arrays.asList("Linux", "Android","iPhone","Windows7" );
+        resultList.add(input.get(random.nextInt(3)) + " " + counter++);
+        if (counter == Integer.MAX_VALUE) {
+            counter = 0;
+        }
+    }
+}

@@ -1,0 +1,99 @@
+package enklikanketa.com.a1kapanel.Tasks;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.lang.ref.WeakReference;
+
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+public class sendNextPinEditTask extends AsyncTask<String, String, String> {
+
+    private ProgressDialog loader;
+    private final WeakReference<Activity> act;
+    private int activity_id;
+    private JSONObject json;
+    private String action;
+
+    // This is the reference to the associated listener
+    private final TaskListener taskListener;
+
+    /**
+     *
+     * @param activity- pass application context! - context.getApplicationContext()
+     * @param activity_id - id of activity in nextpin server
+     * @param json - json of params to send
+     * @param action - action to excecute in request
+     * @param listener - callback listener
+     */
+    public sendNextPinEditTask(Activity activity, int activity_id, JSONObject json, String action,
+                        TaskListener listener) {
+
+        act = new WeakReference<>(activity);
+        this.activity_id = activity_id;
+        this.taskListener = listener;
+        this.json = json;
+        this.action = action;
+    }
+
+    public interface TaskListener {
+        void onFinished(String result);
+    }
+
+    protected String doInBackground(String... urls) {
+
+        String response = null;
+        if(GeneralLib.isActivityValid(act.get())) {
+            ServerCommunication SC = new ServerCommunication(act.get());
+
+            if (action.equals("editGeoActivity"))
+                response = SC.PostNextPinGeoActivityEdit(json, activity_id, action);
+            else if (action.equals("editFrequent"))
+                response = SC.PostNextPinFrequentEdit(json, action);
+        }
+        //Log.d(TAG, "response "+response);
+
+        return response;
+    }
+
+    protected void onPostExecute(String result) {
+        GeneralLib.dismissDialog(act.get(), loader);
+
+        if (result != null) {
+            try {
+                JSONObject linkobj = new JSONObject(result);
+
+                if (linkobj.has("message") && linkobj.getString("message").equals("ok") ||
+                        linkobj.getString("message").equals("Success")) {
+                    if(this.taskListener != null) {
+
+                        // And if it is we call the callback function on it.
+                        this.taskListener.onFinished(result);
+                    }
+                } else {
+                    GeneralLib.reportCrash(new Exception("sendNextPinEditTask message not ok"), result);
+                }
+            } catch (JSONException e) {
+                //Log.e(TAG, "sendActivityEditTask onPostExecute(): " + e);
+                GeneralLib.reportCrash(e, result);
+            }
+        }
+        //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+        else {
+            if(GeneralLib.isActivityValid(act.get()))
+                GeneralLib.showErrorToUser(act.get(), act.get().getString(R.string.general_remote_server_error));
+        }
+    }
+
+    protected void onPreExecute() {
+        //nastavi progressdialog
+        if(GeneralLib.isActivityValid(act.get()))
+            loader = ProgressDialog.show(act.get(), "", act.get().getText(R.string.sendingRequest).toString(), true);
+    }
+}

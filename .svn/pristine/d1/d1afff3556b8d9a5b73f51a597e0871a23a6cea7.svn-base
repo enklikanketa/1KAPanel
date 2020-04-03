@@ -1,0 +1,73 @@
+package enklikanketa.com.a1kapanel.Adapters;
+
+import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.v7.util.DiffUtil;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import java.util.List;
+
+import enklikanketa.com.a1kapanel.Models.MyDiffCallback;
+import enklikanketa.com.a1kapanel.Models.Survey;
+import enklikanketa.com.a1kapanel.Models.SurveyHolder;
+import enklikanketa.com.a1kapanel.System.Database;
+
+public class VprasalnikiSimpleAdapter extends RecyclerView.Adapter<SurveyHolder> {
+
+    private List<Survey> surveys;
+    private Context context;
+    private int itemResource;
+
+    public VprasalnikiSimpleAdapter(Context context, int itemResource, List<Survey> surveys) {
+        this.surveys = surveys;
+        this.context = context;
+        this.itemResource = itemResource;
+    }
+
+    @Override
+    public SurveyHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(this.itemResource, parent, false);
+        return new SurveyHolder(this.context, view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull SurveyHolder holder, int position) {
+        Survey survey = this.surveys.get(position);
+        holder.bindSurvey(survey);
+    }
+
+    @Override
+    public int getItemCount() {
+        return this.surveys.size();
+    }
+
+    public void setActiveOn(int position){
+        surveys.get(position).status = "";
+        surveys.get(position).user_id = "";
+        Database DB = (Database) Database.getInstance(context);
+        String[] surv = DB.getRowData("surveys",
+                new String[]{"link"}, "id="+surveys.get(position).srv_id);
+        surveys.get(position).link = surv[0];
+        notifyItemChanged(position);
+    }
+
+    public void removeSurvey(int position){
+        surveys.remove(position);
+        notifyItemRemoved(position);
+    }
+
+    public void changeData(List<Survey> newSurveys){
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new MyDiffCallback(surveys, newSurveys));
+        surveys = newSurveys;
+        result.dispatchUpdatesTo(this);
+    }
+
+    public void changeDataAll(List<Survey> newSurveys){
+        surveys = newSurveys;
+        notifyDataSetChanged();
+    }
+}

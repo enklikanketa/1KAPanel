@@ -1,0 +1,71 @@
+package com.FDV.hitra1ka;
+
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.MenuItem;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+
+import com.FDV.hitra1ka.Libs.generalLib;
+import com.FDV.hitra1ka.System.Network;
+
+/**
+ * Created by uros on 15.1.2016.
+ */
+public class OAplikaciji extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(com.FDV.hitra1ka.R.layout.oaplikaciji);
+
+        getSupportActionBar();
+
+        Log.e("hitra1ka", ""+this.getResources().getDisplayMetrics().density);
+
+        WebView webView = findViewById(com.FDV.hitra1ka.R.id.textWebOaplikaciji);
+        webView.loadData(getString(R.string.predstavitev_web_html),"text/html","utf-8");
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setDefaultFontSize(18);
+        webView.setBackgroundColor(Color.TRANSPARENT);
+
+        WebView webViewFoot = findViewById(com.FDV.hitra1ka.R.id.textOaplikaciji);
+        webViewFoot.loadData(String.format(getText(com.FDV.hitra1ka.R.string.predstavitev_html).toString(),
+                BuildConfig.VERSION_NAME),"text/html","utf-8");
+        webSettings = webViewFoot.getSettings();
+        webSettings.setDefaultFontSize(14);
+        webViewFoot.setBackgroundColor(Color.TRANSPARENT);
+
+        /*TextView predstavitev = (TextView) findViewById(com.FDV.hitra1ka.R.id.textOaplikaciji);
+        predstavitev.setText(Html.fromHtml(String.format(getText(com.FDV.hitra1ka.R.string.predstavitev_html).toString(),
+                BuildConfig.VERSION_NAME)));*/
+
+        //linki v besedilu so klikljivi- odpre se v default browserju
+        //predstavitev.setMovementMethod(LinkMovementMethod.getInstance());
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                nazaj();
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    //gumb nazaj na telefonu
+    public void onBackPressed() {
+        nazaj();
+    }
+
+    //F, ko hoce uporabnik iti nazaj (na MobilneAnkete)
+    private void nazaj() {
+        if (Network.checkMobileInternet(OAplikaciji.this, true))
+            generalLib.finishNazaj(this);
+    }
+
+}

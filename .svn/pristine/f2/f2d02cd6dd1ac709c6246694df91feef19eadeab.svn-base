@@ -1,0 +1,19 @@
+package enklikanketa.com.a1kapanel;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class MyStartServiceReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Log.d("1kapanel", "wewe MyStartServiceReceiver onReceive");
+        //Util.scheduleJob(context);
+        //Intent intentAction = new Intent(context, ActionReceiver.class);
+        //context.sendBroadcast(intentAction);
+
+        PreferencesFragment.showNotificationTracking(context, context.getString(R.string.app_tracking));
+    }
+}

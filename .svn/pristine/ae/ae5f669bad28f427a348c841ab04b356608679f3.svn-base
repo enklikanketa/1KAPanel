@@ -1,0 +1,211 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+
+import net.nextpin.geolib.NextPin;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+import enklikanketa.com.a1kapanel.PrefsActivity;
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.Receivers.GpsLocationReceiver;
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.Tasks.sendGetActivitiesTask;
+
+public class ActivityLib {
+
+    public static String ACTION_STOP_ACTIVITY = "ACTION_STOP_ACTIVITY";
+
+    private String TAG = "ActivityLib";
+    private Context ctx;
+    private Database DBH;
+
+    public ActivityLib(Context base) {
+        ctx = base;
+        DBH = (Database) Database.getInstance(ctx);
+    }
+
+    /**
+     * Set, update activity based on new data
+     *
+     * @param data - Data of sended activity tracking
+     */
+    public void setOrUpdateNewActivity(Map<String, String> data){
+        insertOrUpdateActivityDB(data);
+    }
+
+    /**
+     * Insert or update activity in DB
+     *
+     * @param activity - Map of data of activity to store in DB
+     */
+    private void insertOrUpdateActivityDB(Map<String, String> activity) {
+        String ank_id = activity.get("ank_id");
+
+        try {
+            //DBH.deleteAllRows("activities");
+            ContentValues cv = new ContentValues();
+
+            JSONObject activityO = new JSONObject(activity.get("activity"));
+            String id_act = activityO.getString("id");
+            cv.put("activity_type", activityO.getString("activity_type"));
+            cv.put("after_seconds", activityO.getString("after_seconds"));
+            cv.put("srv_id", activity.get("ank_id"));
+            cv.put("notif_title", activity.get("title"));
+            cv.put("notif_message", activity.get("message"));
+            cv.put("notif_sound", activity.get("sound"));
+
+            int actExists = DBH.stejData("activities", "id="+id_act);
+
+            if(actExists == 0) {
+                ContentValues initialValues = new ContentValues();
+                initialValues.put("id", ank_id);
+                initialValues.put("link", activity.get("link"));
+                initialValues.put("title", activity.get("srv_title"));
+
+                //insert new survey in DB, if already exists, id is -1
+                DBH.getWritableDatabase().insertWithOnConflict("surveys", null, initialValues, SQLiteDatabase.CONFLICT_IGNORE);
+
+                cv.put("id", id_act);
+                DBH.insertData("activities", cv);
+
+                //show notification
+                NotificationLib nlib = new NotificationLib(ctx);
+                nlib.showNotificationSurvey(activity);
+            }
+            else {
+                DBH.updateData("activities", cv, "id=" + id_act);
+
+                //just in case, update survey data - pretty link or change of title
+                ContentValues initialValues = new ContentValues();
+                initialValues.put("link", activity.get("link"));
+                initialValues.put("title", activity.get("srv_title"));
+                DBH.updateData("surveys", initialValues, "id=" + ank_id);
+            }
+
+        } catch (JSONException e) {
+            Log.e(TAG, "ActivityLib.insertActivityDB() - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    /**
+     * Check granted activity permission in DB
+     *
+     * @param srv_id - survey id of activity
+     */
+    public void activityPermissionGrantedDB(String srv_id) {
+            ContentValues cv = new ContentValues();
+            cv.put("permission", 1);
+            DBH.updateData("activities", cv, "srv_id="+srv_id);
+    }
+
+    /**
+     * Check if activity is granted and running
+     */
+    public boolean areActivityPermissionGrantedAndRunning() {
+        int actExists = DBH.stejData("activities", "permission="+1);
+        return actExists > 0;
+    }
+
+    /**
+     * Starts tracking with NextPin, do the necessary things (show tracking, GPS notifications,...)
+     *
+     * @param event - string of event to log with START tracking log
+     */
+    public void startNextpin(String event){
+        NextPin nextPin = NextPin.getNextPinInstance(ctx);
+        if(!nextPin.isStarted()) {
+            nextPin.start();
+
+            //if you dont define unique token for your project you cant get data
+            nextPin.setProjectToken(ctx.getString(R.string.nextPin_project_name));
+
+            PrefsActivity.postTrackingLog(ctx, "START", event);
+
+            //show ongoing notification
+            NotificationLib nlib = new NotificationLib(ctx);
+            nlib.showNotificationTracking();
+
+            //if GPS is not on, show notification
+            if (!GpsLocationReceiver.isGPSOn(ctx))
+                nlib.showNotificationGPS();
+        }
+    }
+
+    /**
+     * Stops tracking with NextPin, do the necessary things (hide tracking, GPS notifications,...)
+     *
+     * @param event - string of event to log with STOP tracking log
+     */
+    public void stopNextpin(String event){
+        NextPin nextPin = NextPin.getNextPinInstance(ctx);
+        nextPin.stop();
+        PrefsActivity.postTrackingLog(ctx, "STOP", event);
+
+        NotificationLib nlib = new NotificationLib(ctx);
+        nlib.hideNotification(ctx.getResources().getInteger(R.integer.tracking_notification_id));
+        nlib.hideNotification(ctx.getResources().getInteger(R.integer.GPS_notification_id));
+    }
+
+    /**
+     * Delete all activities from DB
+     */
+    private void deleteAllActivitiesDB() {
+        // for a survey(s)
+        DBH.deleteAllRows("activities");
+        stopNextpin("all_activities_deleted");
+    }
+
+    /**
+     * Delete all activities from DB for this survey
+     *
+     * @param srv_id - survey id of which activities must be deleted
+     */
+    private void deleteAllActivitiesDB(String srv_id) {
+        DBH.deleteRows("activities", "srv_id='" + srv_id + "'");
+        if (DBH.stejData("repeaters", "srv_id='" + srv_id + "'") == 0 &&
+                DBH.stejData("geofences", "srv_id='" + srv_id + "'") == 0)
+            GeneralLib.deleteSurveyDB(ctx, srv_id);
+    }
+
+    /**
+     * Delete all activities from DB for this survey
+     *
+     * @param srv_ids - list of survey ids of active activities
+     */
+    public void checkAndDeleteUnactiveActivitiesDB(ArrayList<String> srv_ids) {
+        //is geofence in DB for that survey
+        ArrayList<String> srv_ids_db = DBH.getListOfOneColumn("activities",
+                "srv_id", null);
+
+        //srv_ids.removeAll( listTwo );
+        srv_ids_db.removeAll( srv_ids );
+
+        if(!srv_ids_db.isEmpty()) {
+            for (String ank_id : srv_ids_db)
+                deleteAllActivitiesDB(ank_id);
+        }
+    }
+
+    public void cancelActivities(String srv_id){
+        deleteAllActivitiesDB(srv_id);
+        if(!areActivityPermissionGrantedAndRunning()) {
+            stopNextpin("all_activities_deleted");
+        }
+    }
+
+    /**
+     * Refresh activities - removing/clearing all activities and getting them from server
+     */
+    public void refreshActivities() {
+        new sendGetActivitiesTask(ctx).execute();
+    }
+}

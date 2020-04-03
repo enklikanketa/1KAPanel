@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<enklikanketa.com.a1kapanel.Models.StudyList.SquareRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/litem_study"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="17dp"
+        android:background="@drawable/study_item"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/spodaj_levo_layout"
+            android:layout_alignBottom="@+id/spodaj_levo_layout"
+            android:layout_marginTop="4dp"
+            android:gravity="center_horizontal"
+            android:textSize="@dimen/li_spodaj_text_size" />
+
+        <RelativeLayout
+            android:id="@+id/naslov_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/litem_zgoraj"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="2dp"
+                android:layout_marginBottom="4dp"
+                android:textColor="@color/white"
+                android:textSize="@dimen/default_textview_text_size"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/spodaj_levo_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/naslov_layout"
+            android:layout_marginStart="4dp"
+            android:orientation="horizontal"
+            android:paddingBottom="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="@dimen/li_spodaj_text_size" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/litem_spodaj"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@+id/spodaj_levo_layout"
+            android:layout_alignBottom="@+id/spodaj_levo_layout"
+            android:layout_toEndOf="@+id/spodaj_levo_layout"
+            android:paddingBottom="10dp"
+            android:textColor="@color/white"
+            android:textSize="@dimen/li_spodaj_text_size" />
+    </RelativeLayout>
+
+    <enklikanketa.com.a1kapanel.Models.StudyList.SquareRelativeLayout
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="2dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/litem_unfinished_cnt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/list_item_circle_deactive"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="5dp"
+            android:textColor="@color/white"
+            android:textSize="@dimen/li_spodaj_text_size" />
+    </enklikanketa.com.a1kapanel.Models.StudyList.SquareRelativeLayout>
+</enklikanketa.com.a1kapanel.Models.StudyList.SquareRelativeLayout>

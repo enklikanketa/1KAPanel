@@ -1,0 +1,49 @@
+package enklikanketa.com.a1kapanel.Receivers;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.location.LocationManager;
+
+import net.nextpin.geolib.NextPin;
+
+import enklikanketa.com.a1kapanel.Libraries.NotificationLib;
+import enklikanketa.com.a1kapanel.PrefsActivity;
+import enklikanketa.com.a1kapanel.R;
+
+import static android.content.Context.LOCATION_SERVICE;
+
+public class GpsLocationReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction() != null) {
+            if (intent.getAction().equals("android.location.PROVIDERS_CHANGED")) {
+                NotificationLib NL = new NotificationLib(context);
+                if (!isGPSOn(context)) {
+                    if (NextPin.getNextPinInstance(context).isStarted()) {
+                        NL.showNotificationGPS();
+                        PrefsActivity.postTrackingLog(context, "GPS", "off - tracking on");
+                    } else
+                        PrefsActivity.postTrackingLog(context, "GPS", "off - tracking off");
+                } else {
+                    NL.hideNotification(context.getResources().getInteger(R.integer.GPS_notification_id));
+                    if (NextPin.getNextPinInstance(context).isStarted())
+                        PrefsActivity.postTrackingLog(context, "GPS", "on - tracking on");
+                    else
+                        PrefsActivity.postTrackingLog(context, "GPS", "on - tracking off");
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if GPS is on
+     * @param ctx - Context
+     * @return true if GPS is on, false otherwise
+     */
+    static public boolean isGPSOn(Context ctx) {
+        LocationManager manager = (LocationManager) ctx.getSystemService(LOCATION_SERVICE);
+        return manager != null && manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    }
+}

@@ -1,0 +1,118 @@
+package enklikanketa.com.a1kapanel.Tasks;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import enklikanketa.com.a1kapanel.Adapters.VprasalnikiSimpleAdapter;
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+/**
+ * Created by podkrizniku on 19/4/2018.
+ */
+
+public class sendDeleteSrvUnit extends AsyncTask<Object, Object, String> {
+
+    //application context cannot be leaked
+    private Activity ctx;
+    private ProgressDialog loader;
+    private String srv_user_id, mode, srv_id;
+    private VprasalnikiSimpleAdapter adapter;
+    private int position;
+    private Database DBH;
+
+    public sendDeleteSrvUnit(Activity act, String srv_id, String srv_user_id, String mode, VprasalnikiSimpleAdapter adapter, int position) {
+        ctx = act;
+        this.srv_user_id = srv_user_id;
+        this.srv_id = srv_id;
+        this.mode = mode;
+        this.adapter = adapter;
+        this.position = position;
+        DBH = (Database) Database.getInstance(act);
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        loader = ProgressDialog.show(ctx, "",
+                ctx.getResources().getString(R.string.sendingRequest), true);
+    }
+
+    @Override
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        //Log.d("1kapanel", "wewe result sendDeleteSrvUnit " + result);
+
+        if (result != null) {
+            try {
+                JSONObject obj = new JSONObject(result);
+
+                if (obj.has("note")) {
+                    if(mode.equals("entry")){
+                        //remove from list
+                        adapter.removeSurvey(position);
+                    }
+                    else{
+                        //set view as active/unanswered
+                        adapter.setActiveOn(position);
+                    }
+                } else {
+                    GeneralLib.reportCrash(new Exception("sendDeleteSrvUnit no note in response"), result);
+                }
+            } catch (JSONException e) {
+                //Log.e(TAG, "sendGetAlarmsTask.class onPostExecute(): " + e);
+                GeneralLib.reportCrash(e, result);
+            }
+            GeneralLib.dismissDialog(ctx, loader);
+        }
+        //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+        else {
+            GeneralLib.dismissDialog(ctx, loader);
+            //preveri, ce je povezava
+            //Network.checkMobileInternet(ctx, true);
+            Toast.makeText(ctx, ctx.getText(R.string.general_remote_server_error)
+                    .toString(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected String doInBackground(Object... params) {
+        return postDeleteSrvUserRequest();
+    }
+
+
+    private String postDeleteSrvUserRequest() {
+        //pobere podatke o uporabniku iz baze
+        String[] uporabnik = DBH.getRowData("uporabnik",
+                new String[]{"identifier", "id_server"}, null);
+
+        // poslji
+        JSONObject object = new JSONObject();
+
+        if(uporabnik != null) {
+            // uporabnik prijavljen
+            try {
+                JSONObject logIn = new JSONObject();
+                logIn.put("identifier", uporabnik[0]);
+                logIn.put("id_server", uporabnik[1]);
+                object.put("Login", logIn);
+
+                object.put("ank_id", srv_id);
+                object.put("srv_unit_id", srv_user_id);
+            } catch (JSONException e) {
+                GeneralLib.reportCrash(e, object.toString());
+            }
+
+            ServerCommunication SC = new ServerCommunication(ctx);
+            return SC.PostDeleteSurveyUnit(object);
+        }
+        return null;
+    }
+}

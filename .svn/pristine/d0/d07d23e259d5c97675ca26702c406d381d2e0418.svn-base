@@ -1,0 +1,44 @@
+package enklikanketa.com.a1kapanel.Adapters;
+
+import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+import java.util.List;
+
+import enklikanketa.com.a1kapanel.Models.Survey;
+import enklikanketa.com.a1kapanel.Models.SurveyHolder;
+
+public class VprasalnikiSimpleAdapter extends RecyclerView.Adapter<SurveyHolder> {
+
+    private final List<Survey> surveys;
+    private Context context;
+    private int itemResource;
+
+    public VprasalnikiSimpleAdapter(Context context, int itemResource, List<Survey> surveys) {
+        this.surveys = surveys;
+        this.context = context;
+        this.itemResource = itemResource;
+    }
+
+    @Override
+    public SurveyHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(this.itemResource, parent, false);
+        return new SurveyHolder(this.context, view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull SurveyHolder holder, int position) {
+        Survey survey = this.surveys.get(position);
+        holder.bindSurvey(survey);
+    }
+
+    @Override
+    public int getItemCount() {
+        return this.surveys.size();
+    }
+}

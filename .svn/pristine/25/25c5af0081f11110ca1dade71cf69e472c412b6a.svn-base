@@ -1,0 +1,21 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.content.Context;
+
+import enklikanketa.com.a1kapanel.System.Network;
+
+/**
+ * Created by podkrizniku on 18/12/2017.
+ */
+
+public class DoOnConnection {
+    private Context ctx;
+
+    public DoOnConnection(Context base) {
+        ctx = base;
+
+        if(Network.checkMobileInternet(ctx, false)){
+
+        }
+    }
+}

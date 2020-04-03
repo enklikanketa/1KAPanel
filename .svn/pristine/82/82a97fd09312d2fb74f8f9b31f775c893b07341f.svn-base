@@ -1,0 +1,234 @@
+/*
+ * Made by:
+ * Uroš Podkrižnik
+ * uros.podkriznik(at)gmail.com
+ * Tel.: 041829380
+ */
+
+package com.FDV.hitra1ka;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.FDV.hitra1ka.Libs.generalLib;
+import com.FDV.hitra1ka.System.Database;
+import com.FDV.hitra1ka.System.Network;
+import com.facebook.CallbackManager;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.GoogleApiClient;
+
+public class vpis extends AppCompatActivity implements
+        GoogleApiClient.OnConnectionFailedListener {
+
+    EditText upoIme, geslo;
+    CallbackManager callbackManager;
+    GoogleApiClient mGoogleApiClient;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(com.FDV.hitra1ka.R.layout.vpis);
+
+        //prikazi ikono v actionbar
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_HOME | ActionBar.DISPLAY_SHOW_TITLE);
+            actionBar.setIcon(com.FDV.hitra1ka.R.drawable.ic_action);
+        }
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleApiClient = new GoogleApiClient.Builder(vpis.this)
+                .enableAutoManage(vpis.this, vpis.this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+
+        upoIme = (EditText) findViewById(com.FDV.hitra1ka.R.id.upoIme);
+        geslo = (EditText) findViewById(com.FDV.hitra1ka.R.id.geslo);
+        Button buttonVpis = (Button) findViewById(com.FDV.hitra1ka.R.id.buttonVpis);
+        buttonVpis.setOnClickListener(buttonVpisClick);
+
+        //google login button
+        SignInButton signInButton = (SignInButton) findViewById(com.FDV.hitra1ka.R.id.buttonGoogleVpis);
+        signInButton.setOnClickListener(buttonGoogleVpisClick);
+        signInButton.setSize(SignInButton.SIZE_WIDE);
+        signInButton.setColorScheme(SignInButton.COLOR_AUTO);
+
+        //FacebookSdk.sdkInitialize(getApplicationContext());
+        callbackManager = CallbackManager.Factory.create();
+
+        //LoginButton loginButton = (LoginButton) findViewById(com.FDV.hitra1ka.R.id.buttonFacebookVpis);
+        //loginButton.setReadPermissions("email");
+
+		/*loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+			public void onSuccess(LoginResult loginResult) {
+				// App code
+				Log.v("hitra1ka", "1FB login success "+loginResult.getAccessToken());
+			}
+
+			@Override
+			public void onCancel() {
+				// App code
+				Log.v("hitra1ka", "1FB login cancel ");
+			}
+
+			@Override
+			public void onError(FacebookException exception) {
+				// App code
+				Log.v("hitra1ka", "1FB login exception "+exception);
+			}
+		});*/
+
+        /*LoginManager.getInstance().registerCallback(callbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        Log.v("hitra1ka", "2FB login success " + loginResult);
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        // App code
+                        Log.v("hitra1ka", "2FB login cancel ");
+                    }
+
+                    @Override
+                    public void onError(FacebookException exception) {
+                        // App code
+                        Log.v("hitra1ka", "2FB login exception " + exception);
+                    }
+                });*/
+
+        //pobere podatke o uporabniku iz baze
+        String[] uporabnik = Database.getData(this, "uporabnik",
+                new String[]{"uporabnisko_ime"}, null);
+
+        //ce je uporabnik ze v bazi, ga vpisi v okno
+        if (uporabnik != null) {
+            upoIme.setText(uporabnik[0]);
+            upoIme.setSelection(upoIme.getText().length());
+        }
+    }
+
+    //gumb za vpis
+    OnClickListener buttonVpisClick = new OnClickListener() {
+        public void onClick(View v) {
+            shraniUporabnika(upoIme.getText().toString(), geslo.getText().toString());
+        }
+    };
+
+    //gumb za google vpis
+    OnClickListener buttonGoogleVpisClick = new OnClickListener() {
+        public void onClick(View v) {
+
+            if (Network.checkMobileInternet(vpis.this, true)) {
+                /*if (mGoogleApiClient != null) {
+                    mGoogleApiClient.stopAutoManage(vpis.this);
+                    mGoogleApiClient.disconnect();
+                }*/
+
+                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+                startActivityForResult(signInIntent, 9001);
+            }
+        }
+    };
+
+    /**
+     * Save user in user table, delete old data and go to Main.class
+     *
+     * @param username - email of user
+     * @param password - password of user
+     */
+    private void shraniUporabnika(String username, String password) {
+
+        //ce tabela uporabniki ni prazna, jo pobrise
+        if (Database.stejData(vpis.this, "uporabnik", null) != 0) {
+            Database.deleteAllRows(vpis.this, "uporabnik");
+        }
+
+        //vstavi v tabelo novega uporabnika
+        Database.insertData(vpis.this, "uporabnik", new String[][]{
+                {"uporabnisko_ime", username},
+                {"geslo", password}});
+
+        Intent myIntent = new Intent(vpis.this, Main.class);
+        if (Network.checkMobileInternet(vpis.this, true)) {
+            startActivity(myIntent);
+            generalLib.finishNaprej(vpis.this, true);
+        }
+    }
+
+    //gumb nazaj na telefonu
+    public void onBackPressed() {
+        generalLib.exitDialog(this);
+    }//konec onBackPressed()
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
+        // be available.
+        Log.d("hitra1ka", "onConnectionFailed:" + connectionResult);
+        generalLib.reportCrash(new Exception("onConnectionFailed connectionResult = " + connectionResult + "mGoogleApiClient = " +
+                mGoogleApiClient + "; mGoogleApiClient.isConnected() = " + mGoogleApiClient.isConnected()), null);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d("hitra1ka", "handleSignInResult: " + data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+        if (requestCode == 9001 && data != null) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            if (result != null)
+                handleSignInResult(result);
+            else
+                generalLib.reportCrash(new Exception("GoogleSignInResult result is null! mGoogleApiClient = " +
+                        mGoogleApiClient + "; mGoogleApiClient.isConnected() = " + mGoogleApiClient.isConnected()), null);
+        }
+        else
+            generalLib.reportCrash(new Exception("onActivityResult data is null! mGoogleApiClient = " +
+                    mGoogleApiClient + "; mGoogleApiClient.isConnected() = " + mGoogleApiClient.isConnected()), null);
+    }
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d("hitra1ka", "handleSignInResult: " + result.isSuccess());
+        if (result.isSuccess()) {
+            // Signed in successfully, show authenticated UI.
+            GoogleSignInAccount acct = result.getSignInAccount();
+
+            if (acct != null)
+                shraniUporabnika(acct.getEmail(), this.getString(R.string.special_login_key));
+
+        } else {
+            // Signed out, show unauthenticated UI.
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        //odstranil, ker ni v dokumentaciji
+        /*if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.stopAutoManage(vpis.this);
+            mGoogleApiClient.disconnect();
+        }*/
+    }
+}

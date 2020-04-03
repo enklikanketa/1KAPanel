@@ -1,0 +1,205 @@
+/*
+ * Made by:
+ * Uroš Podkrižnik
+ * uros.podkriznik(at)gmail.com
+ * Tel.: 041829380
+ */
+
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.lang.ref.WeakReference;
+
+import enklikanketa.com.a1kapanel.Libraries.GeneralLib;
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+
+public class MergeIdentifier extends AppCompatActivity {
+
+    private String TAG = "MergeIdentifier";
+    EditText mergeIdentifier;
+    Database DB;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.merge_identifier);
+
+        DB = (Database) Database.getInstance(this);
+
+        mergeIdentifier = findViewById(R.id.midentifier);
+        Button buttonVpis = findViewById(R.id.buttonMerge);
+        buttonVpis.setOnClickListener(buttonMergeClick);
+    }
+
+    //button to pass new identifier
+    OnClickListener buttonMergeClick = new OnClickListener() {
+        public void onClick(View v) {
+            String[] uporabnik = DB.getRowData("uporabnik",
+                    new String[]{"identifier"}, null);
+            if(uporabnik != null) {
+                if (mergeIdentifier.getText().length() > 0 &&
+                        !mergeIdentifier.getText().toString().equals(uporabnik[0])) {
+                    new GetSurveyInfoIdentifierTask(MergeIdentifier.this).execute();
+                }
+                else
+                    Toast.makeText(MergeIdentifier.this,
+                            MergeIdentifier.this.getString(R.string.invalid_identifier)
+                            , Toast.LENGTH_LONG).show();
+            }
+        }
+    };
+
+    private class GetSurveyInfoIdentifierTask extends AsyncTask<Object, Object, String> {
+
+        private final WeakReference<Activity> act;
+        ProgressDialog loader;
+
+        GetSurveyInfoIdentifierTask (Activity act){
+            this.act = new WeakReference<>(act);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            loader = ProgressDialog.show(act.get(), "",
+                    act.get().getResources().getString(R.string.gathering_data_progress), true);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Log.d(TAG, "wewe GetSurveyInfoIdentifierTask result "+result);
+            if (result != null && GeneralLib.isActivityValid(act.get())) {
+                try {
+                    Object json = new JSONTokener(result).nextValue();
+                    if (json instanceof JSONArray && !result.equals("[]")){
+                        JSONArray arr = new JSONArray(result);
+
+                        boolean tracking = false;
+                        boolean sensors = false;
+
+                        for(int i=0; i < arr.length(); i++){
+                            JSONObject obj = arr.getJSONObject(i);
+                            if((!obj.isNull("geofences") && obj.getInt("geofences")>0) ||
+                                    (!obj.isNull("activities") && obj.getInt("activities")>0) ||
+                                    ((!obj.isNull("entry_on") && obj.getInt("entry_on")>0) &&
+                                            (!obj.isNull("location_check") && obj.getInt("location_check")>0)) ||
+                                    (!obj.isNull("tracking_on") && obj.getInt("tracking_on")>0)){
+                                tracking = true;
+                            }
+                            if((!obj.isNull("activities") && obj.getInt("activities")>0) ||
+                                    ((!obj.isNull("tracking_on") && obj.getInt("tracking_on")>0) &&
+                                            (!obj.isNull("activity_recognition") && obj.getInt("activity_recognition")>0))){
+                                sensors = true;
+                            }
+                        }
+                        Intent myIntent = new Intent(MergeIdentifier.this, SurveyConsent.class);
+                        myIntent.putExtra("new_identifier", mergeIdentifier.getText().toString());
+                        myIntent.putExtra("tracking", tracking);
+                        myIntent.putExtra("sensors", sensors);
+                        startActivity(myIntent);
+                        finish();
+                    }
+                    else {
+                        JSONObject obj = new JSONObject(result);
+                        if (obj.has("note")) {
+                            if (obj.getString("note").equals("already participant")) {
+                                GeneralLib.dismissDialog(act.get(), loader);
+                                Toast.makeText(act.get(), act.get().getString(R.string.already_has_access)
+                                        , Toast.LENGTH_LONG).show();
+                            }
+                            else
+                                GeneralLib.reportCrash(new Exception("MergeIdentifier.class onPostExecute() has unknown note: "
+                                        + result), null);
+                        } else {
+                            Log.e(TAG, "MergeIdentifier.class onPostExecute() result: " + result);
+                            if (obj.has("error")) {
+
+                                if(obj.getString("error").equals("identifier does not exist")) {
+                                    GeneralLib.dismissDialog(act.get(), loader);
+                                    Toast.makeText(act.get(), act.get().getString(R.string.identifierNotExist)
+                                            , Toast.LENGTH_LONG).show();
+                                }
+                                //no user in DB yet
+                                else if(obj.getString("error").equals("no data")){}
+
+                                /*if (!GeneralLib.otherErrors(Main.this, obj.getString("error"))) {
+                                    GeneralLib.reportCrash(new Exception("Main.class onPostExecute() has error: "
+                                            + obj.getString("error")), null);
+                                }*/
+                            } else
+                                GeneralLib.reportCrash(new Exception("MergeIdentifier.class onPostExecute() has unknown response: "
+                                        + result), null);
+                        }
+                    }
+                } catch (JSONException e) {
+                    //Log.e(TAG, "Main.class onPostExecute(): " + e);
+                    GeneralLib.reportCrash(e, result);
+                }
+            }
+            //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+            else {
+                //Log.e(TAG, "Main.class onPostExecute() result is null ");
+                if(GeneralLib.isActivityValid(act.get()))
+                    GeneralLib.showErrorToUser(act.get(), act.get().getString(R.string.general_remote_server_error));
+            }
+            GeneralLib.dismissDialog(act.get(), loader);
+        }
+
+        @Override
+        protected String doInBackground(Object... params) {
+            if (GeneralLib.isActivityValid(act.get())) {
+                String[] uporabnik = DB.getRowData("uporabnik",
+                        new String[]{"identifier", "id_server"}, null);
+                if(uporabnik != null)
+                    return postMergeIdentifier(act.get(), uporabnik[0], uporabnik[1]);
+                else
+                    return "{error: \"no data\"}";
+            }
+            else
+                return null;
+        }
+    }
+
+    private String postMergeIdentifier(Context ctx, String identifier, String id_server) {
+        // poslji
+        JSONObject object = new JSONObject();
+
+        // uporabnik prijavljen
+        try {
+            JSONObject logIn = new JSONObject();
+            logIn.put("identifier", identifier);
+            logIn.put("id_server", id_server);
+            //just in case, if registration id is not updated (cleared data...)
+            object.put("identifierToMerge", mergeIdentifier.getText().toString());
+            object.put("Login", logIn);
+
+        } catch (JSONException e) {
+            //Log.e(TAG, "Or could not parse malformed JSON: \"" + object.toString() + "\"");
+            GeneralLib.reportCrash(e, object.toString());
+        }
+
+        ServerCommunication SC = new ServerCommunication(ctx);
+        return SC.PostGetSurveysInfoByIdentifier(object);
+    }
+}

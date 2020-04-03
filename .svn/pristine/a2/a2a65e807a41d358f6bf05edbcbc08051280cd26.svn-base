@@ -1,0 +1,259 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.app.PendingIntent;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Resources;
+import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.NonNull;
+import android.util.Log;
+
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofenceStatusCodes;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+import enklikanketa.com.a1kapanel.R;
+import enklikanketa.com.a1kapanel.Receivers.GeofenceTransitionsIS;
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.Tasks.sendGetGeofencesTask;
+
+/**
+ * Created by podkrizniku on 06/12/2017.
+ */
+
+public class GeofencingLib {
+
+    private String TAG = "GeofencingLib";
+    private Context ctx;
+    private Database DBH;
+    private GeofencingClient mGeofencingClient;
+    private ArrayList<Geofence> mGeofenceList;
+    private PendingIntent mGeofencePendingIntent;
+
+    public GeofencingLib(Context base) {
+        ctx = base;
+        DBH = (Database) Database.getInstance(base);
+        mGeofencingClient = LocationServices.getGeofencingClient(base);//todo testiraj ceje tu ctx namesto base - javilo je nullpointerexception
+        mGeofenceList = new ArrayList<>();
+    }
+
+    private GeofencingRequest getGeofencingRequest() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofences(mGeofenceList);
+        return builder.build();
+    }
+
+    private void addGeofenceToList (JSONObject geofence){
+        try {
+            mGeofenceList.add(new Geofence.Builder()
+                    // Set the request ID of the geofence. This is a string to identify this
+                    // geofence.
+                    .setRequestId(geofence.getString("id"))
+
+                    .setCircularRegion(
+                            Double.parseDouble(geofence.getString("lat")),
+                            Double.parseDouble(geofence.getString("lng")),
+                            Float.parseFloat(geofence.getString("radius"))
+                    )
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                    .setLoiteringDelay(3000)
+                    .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_DWELL |
+                            Geofence.GEOFENCE_TRANSITION_EXIT)
+                    .build());
+        } catch(JSONException e){
+            Log.e(TAG, "GeofencingLib.addGeofenceToList() - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    private PendingIntent getGeofencePendingIntent(int id) {
+        // Reuse the PendingIntent if we already have it.
+        if (mGeofencePendingIntent != null) {
+            return mGeofencePendingIntent;
+        }
+        Intent intent = new Intent(ctx, GeofenceTransitionsIS.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
+        // calling addGeofences() and removeGeofences().
+        mGeofencePendingIntent = PendingIntent.getService(ctx, id, intent, PendingIntent.
+                FLAG_UPDATE_CURRENT);
+        return mGeofencePendingIntent;
+    }
+
+    private void addGeofences() {
+        try {
+            mGeofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent(0))
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            // Geofences added
+                            // ...
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            // Failed to add geofences
+                            // todo , naredi, da se kasneje doda
+                        }
+                    });
+        } catch(SecurityException e){
+            Log.e(TAG, "GeofencingLib.addGeofences() - Error: " + e.getMessage());
+            //todo shrani , da kasneje kreira te stvari
+        }
+    }
+
+    /**
+     * Returns the error string for a geofencing error code.
+     */
+    public String getErrorString(Context context, int errorCode) {
+        Resources mResources = context.getResources();
+        switch (errorCode) {
+            case GeofenceStatusCodes.GEOFENCE_NOT_AVAILABLE:
+                return mResources.getString(R.string.geofence_not_available);
+            case GeofenceStatusCodes.GEOFENCE_TOO_MANY_GEOFENCES:
+                return mResources.getString(R.string.geofence_too_many_geofences);
+            case GeofenceStatusCodes.GEOFENCE_TOO_MANY_PENDING_INTENTS:
+                return mResources.getString(R.string.geofence_too_many_pending_intents);
+            default:
+                return mResources.getString(R.string.unknown_geofence_error);
+        }
+    }
+
+    /**
+     * Set, update or delete geofences based on new data
+     *
+     * @param data - Data of sended geofences
+     */
+    public void setOrUpdateNewGeofences(Map<String, String> data) {
+        //you can get your text message here.
+        String link = data.get("link");
+        String ank_id = data.get("ank_id");
+
+        ContentValues initialValues = new ContentValues();
+        initialValues.put("id", ank_id);
+        initialValues.put("link", link);
+
+        //insert new survey in DB, if already exists, id is -1
+        DBH.getWritableDatabase().insertWithOnConflict("surveys", null, initialValues, SQLiteDatabase.CONFLICT_IGNORE);
+
+        //is geofence in DB for that survey
+        ArrayList<String> geofences_ids = DBH.getListOfOneColumn("geofences",
+                "id", "srv_id='" + ank_id + "'");
+
+        try {
+            JSONArray geofences = new JSONArray(data.get("geofences"));
+            if (geofences.length() > 0) {
+                for (int i = 0; i < geofences.length(); i++) {
+                    JSONObject geofence = geofences.getJSONObject(i);
+                    geofence.put("ank_id", ank_id);
+                    if (geofences_ids.contains(geofence.getString("id"))) {
+                        updateGeofenceDB(geofence);
+                        geofences_ids.remove(geofence.getString("id"));
+                    } else {
+                        insertGeofenceDB(geofence);
+                        addGeofenceToList(geofence);
+                    }
+                }
+                //if geofences were added to list, run them
+                if(!mGeofenceList.isEmpty())
+                    addGeofences();
+                //delete all geofences from DB that remains in geofences_ids
+                //that means geofences were deleted on server app
+                for (String id : geofences_ids)
+                    deleteGeofenceDB(id, ank_id);
+            }
+            //empty, remove all geofences
+            else
+                deleteAllGeofencesDB(ank_id);
+
+        } catch (JSONException e) {
+            Log.e(TAG, "GeofencingLib.setOrUpdateNewGeofences() - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    /**
+     * Insert geofence in DB
+     *
+     * @param geofence - JSONObject of data of geofence to store in DB
+     */
+    private void insertGeofenceDB(JSONObject geofence) {
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put("id", geofence.getString("id"));
+            cv.put("srv_id", geofence.getString("ank_id"));
+            cv.put("address", geofence.getString("address"));
+            cv.put("lat", geofence.getString("lat"));
+            cv.put("lng", geofence.getString("lng"));
+            cv.put("radius", geofence.getString("radius"));
+            DBH.insertData("geofences", cv);
+        } catch (JSONException e) {
+            Log.e(TAG, "GeofencingLib.insertGeofenceDB() - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    /**
+     * Update geofence in DB
+     *
+     * @param geofence - JSONObject of data of geofence to update in DB
+     */
+    private void updateGeofenceDB(JSONObject geofence) {
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put("address", geofence.getString("address"));
+            cv.put("lat", geofence.getString("lat"));
+            cv.put("lng", geofence.getString("lng"));
+            cv.put("radius", geofence.getString("radius"));
+            DBH.updateData("geofences", cv, "id='" + geofence.getInt("id") + "'");
+        } catch (JSONException e) {
+            Log.e(TAG, "GeofencingLib.updateGeofenceDB() - Error: " + e.getMessage());
+            GeneralLib.reportCrash(e, null);
+        }
+    }
+
+    /**
+     * Delete geofence from DB
+     *
+     * @param id     - id of geofence
+     * @param srv_id - id of survey
+     */
+    private void deleteGeofenceDB(String id, String srv_id) {
+        DBH.deleteRows("geofences", "id='" + id + "'");
+        if (DBH.stejData("repeaters", "srv_id='" + srv_id + "'") == 0 &&
+                DBH.stejData("geofences", "srv_id='" + srv_id + "'") == 0)
+            GeneralLib.deleteSurveyDB(ctx, srv_id);
+    }
+
+    /**
+     * Delete all geofences from DB
+     *
+     * @param srv_id - id of survey, parent of geofences
+     */
+    private void deleteAllGeofencesDB(String srv_id) {
+        DBH.deleteRows("geofences", "srv_id='" + srv_id + "'");
+        if (DBH.stejData("repeaters", "srv_id='" + srv_id + "'") == 0)
+            GeneralLib.deleteSurveyDB(ctx, srv_id);
+    }
+
+    /**
+     * Refresh geofences - getting them from server
+     */
+    public void refreshGeofences() {
+        DBH.deleteAllRows("geofences");//todo ne tega
+        new sendGetGeofencesTask(ctx).execute();
+    }
+}

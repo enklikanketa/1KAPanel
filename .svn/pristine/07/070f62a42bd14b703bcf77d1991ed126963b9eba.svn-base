@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_settings">
+        <Preference
+            android:dialogTitle="@string/pref_token"
+            android:key="PREF_TOKEN"
+            android:summary="@string/pref_token_summary"
+            android:title="@string/pref_token" />
+        <Preference
+            android:key="PREF_START_STOP"
+            android:summary="@string/stop_desc"
+            android:title="@string/Stop_Tracking" />
+        <Preference
+            android:key="PREF_REFRESH_ALARMS"
+            android:title="@string/refresh_alarms" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cat_sys_state">
+        <Preference
+            android:key="PREF_DB_NUMBER"
+            android:summary="200"
+            android:title="@string/pref_db_number" />
+    </PreferenceCategory>
+</PreferenceScreen>

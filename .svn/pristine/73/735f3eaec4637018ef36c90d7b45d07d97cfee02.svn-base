@@ -1,0 +1,113 @@
+package com.FDV.hitra1ka;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
+import android.util.Log;
+import android.widget.CompoundButton;
+import android.widget.Toast;
+
+import com.FDV.hitra1ka.Libs.generalLib;
+import com.FDV.hitra1ka.System.Database;
+import com.FDV.hitra1ka.System.ServerCommunication;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+class posljiBlockRepeatedIP extends AsyncTask<String, String, String> {
+
+    ProgressDialog loader;
+    Activity ctx;
+    String id_vprasalnika;
+    private int blockIP;
+    private CompoundButton buttonView;
+    //se rabi, da se ne zacikla v listeneru (ce ne se samega sebe klice z setChecked)
+    private CompoundButton.OnCheckedChangeListener blockIPClick;
+
+    posljiBlockRepeatedIP(Activity context, String id_vprasalnika1, int blockIP1,
+                          CompoundButton buttonView1,
+                          CompoundButton.OnCheckedChangeListener blockIPClick1) {
+
+        ctx = context;
+        id_vprasalnika = id_vprasalnika1;
+        blockIP = blockIP1;
+        buttonView = buttonView1;
+        blockIPClick = blockIPClick1;
+    }
+
+    protected String doInBackground(String... urls) {
+
+        JSONObject object = new JSONObject();
+
+        try {
+            object.put("blockIP", blockIP);
+
+            //pridobi podatke o uporabniku
+            String[] uporabnik = Database.getData(ctx, "uporabnik",
+                    new String[]{"uporabnisko_ime", "geslo"}, null);
+
+            if (uporabnik != null) {
+                //dodaj uporabnika v json objekt
+                JSONObject logIn = new JSONObject();
+                logIn.put("username", uporabnik[0]);
+                logIn.put(uporabnik[1].equals(ctx.getString(R.string.special_login_key))
+                        ? "special_login" : "password", uporabnik[1]);
+
+                object.put("Login", logIn);
+            } else
+                return null;
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return ServerCommunication.PostBlockRepeatedIP(ctx, object, id_vprasalnika);
+    }
+
+    protected void onPostExecute(String result) {
+        generalLib.dismissDialog(ctx, loader);
+        buttonView.setOnCheckedChangeListener(null);
+
+        if (result != null) {
+            try {
+                JSONObject linkobj = new JSONObject(result);
+
+                if (linkobj.has("note")) {
+                    if (blockIP > 0)
+                        Toast.makeText(ctx, ctx.getString(R.string.block_IP_yes),
+                                Toast.LENGTH_LONG).show();
+                    else
+                        Toast.makeText(ctx, ctx.getString(R.string.block_IP_no),
+                                Toast.LENGTH_LONG).show();
+                } else {
+                    if (linkobj.has("error")) {
+                        if (!generalLib.otherErrors(ctx, linkobj.getString("error")))
+                            generalLib.reportCrash(new Exception("posljiBlockRepeatedIP onPostExecute() has error: "
+                                    + linkobj.getString("error")), null);
+                    } else
+                        generalLib.reportCrash(new Exception("posljiBlockRepeatedIP onPostExecute() has unknown response: "
+                                + result), null);
+                    buttonView.setChecked(blockIP == 0);
+                }
+            } catch (JSONException e) {
+                Log.e("hitra1ka", "posljiBlockRepeatedIP onPostExecute(): " + e);
+                generalLib.reportCrash(e, result);
+            }
+        }
+        //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+        else {
+            //preveri, ce je povezava
+            //Network.checkMobileInternet(ctx, true);
+            Toast.makeText(ctx, ctx.getText(R.string.general_remote_server_error)
+                    .toString(), Toast.LENGTH_LONG).show();
+            buttonView.setChecked(blockIP == 0);
+        }
+
+        buttonView.setOnCheckedChangeListener(blockIPClick);
+    }
+
+    protected void onPreExecute() {
+        //nastavi progressdialog
+        loader = ProgressDialog.show(ctx, "", ctx.getText(R.string.progressObjava).toString(), true);
+    }
+}

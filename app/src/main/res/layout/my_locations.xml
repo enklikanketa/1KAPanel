@@ -1,0 +1,19 @@
+<LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/last_ar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/no_detected_activities"
+        android:textSize="12sp"
+        android:visibility="gone"/>
+
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</LinearLayout >

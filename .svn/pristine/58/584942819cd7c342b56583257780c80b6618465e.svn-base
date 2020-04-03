@@ -1,0 +1,82 @@
+package enklikanketa.com.a1kapanel.Receivers;
+
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.Map;
+
+import enklikanketa.com.a1kapanel.Libraries.AlarmLib;
+import enklikanketa.com.a1kapanel.Libraries.DoOnConnection;
+import enklikanketa.com.a1kapanel.Libraries.NotificationLib;
+import enklikanketa.com.a1kapanel.System.Database;
+
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
+
+    SQLiteOpenHelper DBH;
+
+    public MyFirebaseMessagingService() {
+        super();
+        Log.d("a1kapanel", "MyFirebaseMessagingService ");
+    }
+
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
+        Log.d("a1kapanel", "From: " + remoteMessage.getFrom());
+
+        DBH = new Database(this);
+
+        //check and send old data
+        new DoOnConnection(this);
+
+        Map<String, String> data = remoteMessage.getData();
+        //you can get your text message here.
+        String action = data.get("action");
+
+        // Check if message contains a data payload.
+        if (remoteMessage.getData().size() > 0) {
+            Log.d("a1kapanel", "Message data payload: " + remoteMessage.getData());
+        }
+
+        // Check if message contains a notification payload.
+        if (remoteMessage.getNotification() != null) {
+            Log.d("a1kapanel", "Message Notification Body: " + remoteMessage.getNotification().getBody());
+        }
+
+        // Also if you intend on generating your own notifications as a result of a received FCM
+        // message, here is where that should be initiated. See sendNotification method below.
+
+        //message to show one notification
+        if(action.equals("notification")) {
+            NotificationLib nlib = new NotificationLib(this);
+            nlib.showNotificationSurvey(data);
+        }
+
+        //message to set alarm
+        else if(action.equals("alarm")) {
+            AlarmLib alib = new AlarmLib(this);
+            alib.setOrUpdateNewAlarm(data);
+        }
+
+        //message to cancel alarm
+        else if(action.equals("cancel_alarm")) {
+            AlarmLib alib = new AlarmLib(this);
+            alib.cancelAndDeleteAlarms(data.get("srv_id"));
+        }
+    }
+
+    @Override
+    public void onDeletedMessages() {
+        /*
+         * In some situations, FCM may not deliver a message. This occurs when there are too many messages (>100)
+         * pending for your app on a particular device at the time it connects or if the device hasn't connected to
+         * FCM in more than one month. In these cases, you may receive a callback to FirebaseMessagingService.onDeletedMessages()
+         * When the app instance receives this callback, it should perform a full sync with your app server.
+         * If you haven't sent a message to the app on that device within the last 4 weeks, FCM won't call onDeletedMessages().
+         * Vir: https://firebase.google.com/docs/cloud-messaging/android/send-multiple
+         */
+    }
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/survey_list_item_selector"
+    android:orientation="vertical">
+
+    <enklikanketa.com.a1kapanel.Models.StudyList.SquareRelativeLayout
+        android:id="@+id/vprAktiv"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginRight="10dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="center"/>
+
+    <RelativeLayout
+        android:id="@+id/naslov_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toEndOf="@+id/vprAktiv">
+
+        <TextView
+            android:id="@+id/litem_zgoraj"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="10dp"
+            android:textSize="@dimen/li_spodaj_text_size"/>
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/litem_spodaj"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/naslov_layout"
+        android:layout_toEndOf="@+id/vprAktiv"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="2dp"
+        android:layout_marginStart="4dp"
+        android:paddingBottom="10dp"
+        android:textSize="@dimen/li_zgoraj_text_size" />
+</RelativeLayout>

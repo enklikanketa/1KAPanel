@@ -1,0 +1,77 @@
+/*
+ * Made by:
+ * Uro� Podkri�nik
+ * uros.podkriznik(at)gmail.com
+ * Tel.: 041829380
+ */
+
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.app.Fragment;
+import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import enklikanketa.com.a1kapanel.Libraries.AlarmLib;
+import enklikanketa.com.a1kapanel.System.Network;
+import enklikanketa.com.a1kapanel.Tasks.getSurveyList;
+
+public class VsiVprasalniki extends Fragment {
+
+    ListView seznam;
+    Activity ctx;
+    boolean posodobiSeznam = true;
+    TextView text_ni_vprasalnikov;
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        //getActivity().setTitle(getResources().getString(R.string.vsiVprasalniki));
+
+        View view = inflater.inflate(R.layout.vsi_vprasalniki, container, false);
+        if (posodobiSeznam) {
+            seznam = view.findViewById(R.id.vsiVprasalnikiList);
+            text_ni_vprasalnikov = view.findViewById(R.id.ni_podatkov_vprasalniki);
+            posodobiSeznam = false;
+        }
+
+        final SwipeRefreshLayout swipeLayout = view.findViewById(R.id.swiperefresh_vsivprasalniki);
+        swipeLayout.setColorSchemeResources(R.color.colorPrimary);
+        swipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener()
+        {
+            @Override
+            public void onRefresh()
+            {
+                if (Network.checkMobileInternet(ctx, true)) {
+                    new getSurveyList(ctx, -1, text_ni_vprasalnikov, seznam, null).execute();
+                }
+                swipeLayout.setRefreshing(false);
+            }
+        });
+
+        return view;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        ctx = getActivity();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (Network.checkMobileInternet(ctx, true)) {
+            new getSurveyList(ctx, -1, text_ni_vprasalnikov, seznam, null).execute();
+            AlarmLib al = new AlarmLib(ctx);
+            al.refreshAlarms();
+        }
+    }
+}

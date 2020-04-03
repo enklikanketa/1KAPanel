@@ -1,0 +1,292 @@
+package enklikanketa.com.a1kapanel;
+
+import android.content.Intent;
+import android.location.Location;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
+
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import net.nextpin.geolib.NextPin;
+import net.nextpin.geolib.NextPinListener;
+import net.nextpin.geolib.types.GeoActivity;
+import net.nextpin.geolib.types.GeoPrediction;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Calendar;
+import java.util.List;
+
+import enklikanketa.com.a1kapanel.System.Database;
+import enklikanketa.com.a1kapanel.System.ServerCommunication;
+
+public class Main extends AppCompatActivity implements NextPinListener, NextPin.GeoActivityReceiver, NextPin.GeoPredictionReceiver {
+
+    NextPin nextPin;
+    TextView tvPermissionsProblem;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
+        //preveri bazo - ce je za posodobiti
+        new Database(this).getWritableDatabase();
+
+        //request for permission which app needs it
+        tvPermissionsProblem = (TextView) findViewById(R.id.tvPermissionsProblem);
+        tvPermissionsProblem.setMovementMethod(LinkMovementMethod.getInstance());
+        tvPermissionsProblem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NextPin.requestPermissions(Main.this);
+            }
+        });
+
+        nextPin = NextPin.getNextPinInstance(this);
+        //if you want to track cordinates/accelerometer and other things you can
+        nextPin.start();
+        //if you dont define unique token for specific person/object you cant get data
+        nextPin.setToken("up1katest1");
+        //if you dont define unique token for zyour project you cant get data
+        nextPin.setProjectToken("1KAPanel");
+        //just show notification if user shut down gps
+        nextPin.setNotificationGpsOff(true, R.mipmap.ic_launcher, Main.class);
+        //add standard listeners
+        nextPin.addListener(this);
+
+        Calendar start = Calendar.getInstance();
+        start.set(Calendar.HOUR_OF_DAY, 0);
+        start.set(Calendar.MINUTE, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+
+        //example how to call Activities for specific day it is possible also get activity for more than one days
+        nextPin.getGeoActivities(this, start);
+
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Main.this, WebResevanje.class);
+                //intent.putExtra("link", getString(R.string.defaultSurveyURL));
+                intent.putExtra("link", "http://test.1ka.si/a/4617");
+                startActivity(intent);
+            }
+        });
+
+        String refreshedToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d("a1kapanel", " token: " + refreshedToken);
+
+        FirebaseMessaging.getInstance().subscribeToTopic("1katest");
+
+        new Work().execute();
+    }
+
+    // razred Work uporabljen, da deluje progressbar med loadanjem - Logiranje
+    private class Work extends AsyncTask<Object, Object, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            //Log.d("1kapanel", "result " + result);
+
+            if (result != null) {
+                    try {
+                        JSONObject obj = new JSONObject(result);
+
+                        if (obj.has("note")) {
+                            if (obj.getString("note").equals("login OK")) {
+                                /*if (obj.has("version") && !isLastVersion(obj.getString("version"))
+                                        && getString(R.string.server_url).equals(getString(R.string.test_server_url)))
+                                    updateVersionAlert();
+                                else {*/
+
+                                if(obj.has("identifier") && obj.has("id_server"))
+                                    shraniUporabnika(obj.getString("identifier"), obj.getString("id_server"));
+
+                                /*Intent myIntent = new Intent(Main.this, glavnoOkno.class);
+                                startActivity(myIntent);
+                                generalLib.finishNaprej(Main.this, true);*/
+                                //}
+                            }
+                        } else {
+                            /*if (obj.has("error")) {
+                                if (!generalLib.otherErrors(Main.this, obj.getString("error"))) {
+                                    generalLib.reportCrash(new Exception("Main.class onPostExecute() has error: "
+                                            + obj.getString("error")), null);
+                                }
+                            } else
+                                generalLib.reportCrash(new Exception("Main.class onPostExecute() has unknown response: "
+                                        + result), null);
+
+                            Intent myIntent = new Intent(Main.this, vpis.class);
+                            startActivity(myIntent);
+                            generalLib.finishNazaj(Main.this);*/
+                        }
+                    } catch (JSONException e) {
+                        Log.e("hitra1ka", "Main.class onPostExecute(): " + e);
+                        //generalLib.reportCrash(e, result);
+                    }
+            }
+            //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+            else {
+                /*poskusiZnovaB.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(Main.this, Main.this.getString(com.FDV.hitra1ka.R.string.general_remote_server_error)
+                        , Toast.LENGTH_LONG).show();*/
+            }
+        }
+
+        @Override
+        protected String doInBackground(Object... params) {
+            return postLoginMain();
+        }
+    }
+
+    private String postLoginMain() {
+        //pobere podatke o uporabniku iz baze
+        String[] uporabnik = Database.getData(Main.this, "uporabnik",
+                new String[]{"identifier", "id_server"}, null);
+
+        // poslji
+        JSONObject object = new JSONObject();
+
+        String identifier = (uporabnik == null) ? "no_identifier" : uporabnik[0];
+        String id_server = (uporabnik == null) ? "" : uporabnik[1];
+
+        // uporabnik prijavljen
+        try {
+            JSONObject logIn = new JSONObject();
+            logIn.put("identifier", identifier);
+            logIn.put("id_server", id_server);
+            object.put("Login", logIn);
+
+        } catch (JSONException e) {
+            Log.e("hitra1ka", "Or could not parse malformed JSON: \"" + object.toString() + "\"");
+        }
+
+        return ServerCommunication.PostLogin(Main.this, object);
+    }
+
+    /**
+     * Save user in user table, delete old data
+     *
+     * @param identifier - identifier of user
+     * @param id_server - id of user on server DB
+     */
+    private void shraniUporabnika(String identifier, String id_server) {
+
+        //ce tabela uporabniki ni prazna, jo pobrise
+        if (Database.stejData(Main.this, "uporabnik", null) != 0) {
+            Database.deleteAllRows(Main.this, "uporabnik");
+        }
+
+        //vstavi v tabelo novega uporabnika
+        Database.insertData(Main.this, "uporabnik", new String[][]{
+                {"identifier", identifier},
+                {"id_server", id_server}});
+
+        /*Intent myIntent = new Intent(vpis.this, Main.class);
+        if (Network.checkMobileInternet(vpis.this, true)) {
+            startActivity(myIntent);
+            generalLib.finishNaprej(vpis.this, true);
+        }*/
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //check whether all permissions are intact
+        String missingPermissionsStr = NextPin.checkForMissingPermissions(Main.this);
+        if (!"".equals(missingPermissionsStr)) {
+            Log.d("1kapanel", "Problem with permissions!");
+            tvPermissionsProblem.setVisibility(View.VISIBLE);
+            missingPermissionsStr += " <a href=\"#\">Click Here</a>";
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                tvPermissionsProblem.setText(Html.fromHtml(missingPermissionsStr, Html.FROM_HTML_MODE_LEGACY));
+            } else {
+                tvPermissionsProblem.setText(Html.fromHtml(missingPermissionsStr));
+            }
+        } else {
+            //if the permissions are ok now, remove this view.
+            tvPermissionsProblem.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        nextPin.stop();
+    }
+
+    @Override
+    public void receiveGeoActivities(List<GeoActivity> list) {
+
+        //activity for specific day
+        if (list != null) {
+            TextView textView = (TextView) findViewById(R.id.testView);
+            String test = "";
+            for (GeoActivity geoActivity : list)
+                test = test + geoActivity.getName() + " " + geoActivity.getDuration() + " ";
+            textView.setText(test);
+        }
+        //for specific stay point you can call next place prediction
+        //NextPin.getNextPinInstance(MainActivity.this).getGeoPrediction(this, list.get(0).getLocationId());
+
+    }
+
+    @Override
+    public void onLocalLocationDetected(Location location) {
+        //last detected location in library
+    }
+
+    @Override
+    public void onDBChangeDetected(int i) {
+    }
+
+    @Override
+    public void onLastSentLocation(Location location) {
+        //last location which was send on server
+    }
+
+    @Override
+    public void onWakeUp() {
+        //library wakes to retrieve new data.
+    }
+
+    @Override
+    public void onLastRejectedLocation(Location location) {
+        //last rejected location
+
+    }
+
+    @Override
+    public void onNewStayPoint() {
+        //maybe you need to update list of stay points
+    }
+
+    @Override
+    public void onEditStaypPoint() {
+    }
+
+    @Override
+    public void receiveGeoPrediction(List<GeoPrediction> list) {
+        //implement what you want to do with prediction for specific activity
+    }
+}

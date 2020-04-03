@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 1ka API private key -->
+    <string name="enka_api_private_key" translatable="false">your_1ka_api_private_key</string>
+    <!-- google maps private key -->
+    <string name="google_maps_api_key" translatable="false">your_google_maps_api_key</string>
+</resources>

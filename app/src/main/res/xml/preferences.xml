@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_settings">
+        <Preference
+            android:key="PREF_START_STOP_TRACKING"
+            android:summary="@string/stop_desc"
+            android:title="@string/Stop_Tracking" />
+        <Preference
+            android:key="PREF_REFRESH_ALARMS"
+            android:title="@string/refresh_alarms" />
+        <Preference
+            android:key="PREF_REFRESH_GEOFENCES"
+            android:title="@string/refresh_geofences" />
+        <Preference
+            android:key="PREF_REFRESH_TRACKING"
+            android:title="@string/refresh_tracking" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cat_sys_state">
+        <Preference
+            android:key="PREF_TRACKING_NUMBER"
+            android:summary=""
+            android:title="@string/pref_tracking_number" />
+    </PreferenceCategory>
+</PreferenceScreen>

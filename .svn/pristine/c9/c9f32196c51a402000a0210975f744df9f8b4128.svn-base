@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/enkablue"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingBottom="8dp"
+            android:paddingEnd="10dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingStart="10dp"
+            android:text="@string/oAplikaciji"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/default_textview_text_size" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/card_box"
+            android:orientation="vertical"
+            android:paddingBottom="12dp"
+            android:paddingLeft="@dimen/default_padding_left_right"
+            android:paddingRight="@dimen/default_padding_left_right"
+            android:paddingTop="12dp">
+
+            <WebView
+                android:id="@+id/textWebOaplikaciji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/card_box"
+            android:orientation="vertical"
+            android:paddingBottom="12dp"
+            android:paddingLeft="@dimen/default_padding_left_right"
+            android:paddingRight="@dimen/default_padding_left_right"
+            android:paddingTop="12dp">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:paddingBottom="5dp"
+                android:paddingTop="5dp"
+                android:src="@drawable/predstavitev_slika" />
+
+            <WebView
+                android:id="@+id/textOaplikaciji"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

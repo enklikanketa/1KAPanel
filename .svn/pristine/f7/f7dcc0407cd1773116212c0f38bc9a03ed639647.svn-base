@@ -1,0 +1,58 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.content.Context;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.crashlytics.android.Crashlytics;
+
+import java.util.Random;
+
+/**
+ * Created by podkrizniku on 06/12/2017.
+ */
+
+public class GeneralLib {
+
+    /**
+     * Creates random integer. Best for random int IDs
+     * @return integet in range of 1000000 to 2147483646
+     */
+    public static int getRandomInt(){
+        Random r = new Random();
+        return r.nextInt(2147483646-1000000) + 1000000;
+    }
+
+    /**
+     * Report an exception to FirebaseCrash
+     *
+     * @param e                - exception to report on FirebaseCrash
+     * @param additionalString - additional text to add to end of FirebaseCrash report e.g. to add
+     *                         a string that can not be transformed in JSONObject (JSONException
+     *                         only report first word)
+     */
+    public static void reportCrash(Exception e, String additionalString) {
+        String additionalStringPrefix = "\n\nADDITIONAL FROM DEV: ";
+
+        if (additionalString != null) {
+            if (additionalString.equals(""))
+                additionalString = additionalStringPrefix + "[empty string]";
+            else
+                additionalString = additionalStringPrefix + additionalString;
+        } else
+            additionalString = "";
+
+        Crashlytics.log(e + additionalString);
+        Log.e("1kapanel", e + additionalString);
+    }
+
+    /**
+     * Show error to user by toast
+     *
+     * @param ctx - Context
+     * @param errorMessage - message that will show in toast
+     */
+    public static void showErrorToUser(Context ctx, String errorMessage) {
+        Toast.makeText(ctx, errorMessage, Toast.LENGTH_LONG).show();
+    }
+}

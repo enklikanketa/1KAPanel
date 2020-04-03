@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">1KAPanel</string>
+    <string name="title_activity_main">Main</string>
+
+    <string name="loadPage">Loading page&#8230;</string>
+
+    <!-- network and communication -->
+    <string name="general_mobile_network_error">No internet connection</string>
+</resources>

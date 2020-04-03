@@ -1,0 +1,280 @@
+package enklikanketa.com.a1kapanel.Libraries;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import enklikanketa.com.a1kapanel.Receivers.AlarmReceiver;
+import enklikanketa.com.a1kapanel.System.Database;
+
+import static android.content.Context.ALARM_SERVICE;
+
+/**
+ * Created by podkrizniku on 06/12/2017.
+ */
+
+public class AlarmLib {
+
+    private String TAG = "AlarmLib";
+    private Context ctx;
+
+    public AlarmLib(Context base) {
+        ctx = base;
+    }
+
+    /**
+     * Create and run alarm fo this alarm id/broadcast requsr code
+     * If alarm for this id already exists, this will update it, if not it will create it
+     * @param sender PendingIntent to get broadcast of alarm
+     * @param id id of alamr/sender - request code of broadcast
+     */
+    private void setAlarm(PendingIntent sender, int id, long triggerAtMillis, long intervalMillis){
+        //Log.d("1kapanel", "wewe repeat "+data.get("repeat"));
+
+        AlarmManager alarm1 = (AlarmManager) ctx.getSystemService(ALARM_SERVICE);
+        if(alarm1 != null) {
+            //current time in millis - add 10 seconds
+            long sdl = Calendar.getInstance().getTimeInMillis()+(1000*10);
+            alarm1.setRepeating(AlarmManager.RTC_WAKEUP, triggerAtMillis, intervalMillis, sender);
+            //alarm1.cancel(sender);
+        }
+    }
+
+    /**
+     * Create and run alarm fo this alarm id/broadcast requsr code
+     * If alarm for this id already exists, this will update it, if not it will create it
+     * @param data data of alarm/notification
+     * @param id id of alamr/sender - request code of broadcast
+     */
+    private void setAlarms(Map<String, String> data, int id){
+        Intent mintent = new Intent(ctx, AlarmReceiver.class);
+        mintent.putExtra("title", data.get("title"));
+        mintent.putExtra("message", data.get("message"));
+        mintent.putExtra("link", data.get("link"));
+        mintent.putExtra("sound", data.get("sound"));
+        mintent.putExtra("sender_id", id+"");
+        PendingIntent sender = PendingIntent.getBroadcast(ctx, id, mintent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        Log.d("1kapanel", "wewe repeat "+data.get("repeat"));
+
+        //String repeat = "{\"repeat_by\":\"everyday\",\"time_in_day\":[900,1000,1100],\"day_in_week\":[2,6],\"every_which_day\":\"4\"}";
+
+        try{
+            JSONObject repeatObj = new JSONObject(data.get("repeat"));
+            //String repeatby = repeatObj.getString("repeat_by");
+            switch(repeatObj.getString("repeat_by")){
+                case "everyday":
+                    Log.d("1kapanel", "wewe everyday "+repeatObj.getJSONArray("time_in_day"));
+
+                    SimpleDateFormat sdf = new SimpleDateFormat("HHmm");
+                    String cTime = sdf.format(new Date());
+                    Log.d("1kapanel", "wewe currentDateandTime "+cTime);
+
+                    for(int i = 0; i < repeatObj.getJSONArray("time_in_day").length(); i++){
+                        String time = repeatObj.getJSONArray("time_in_day").getString(i);
+                        int timeM = Integer.valueOf(time.substring(time.length() - 2));
+                        int timeH = Integer.valueOf(time.substring(0, time.length() - 2));
+                        int cTimeM = Integer.valueOf(cTime.substring(cTime.length() - 2));
+                        int cTimeH = Integer.valueOf(cTime.substring(0, cTime.length() - 2));
+                        Log.d("1kapanel", "wewe time "+time);
+
+                        int subH = 0;
+                        if(cTimeH <=  timeH)
+                            subH = timeH-cTimeH;
+                        else
+                            subH = 24-cTimeH+timeH;
+                        Log.d("1kapanel", "wewe subH "+subH);
+
+                        int subM = 0;
+                        if(cTimeM <=  timeM)
+                            subM = timeM-cTimeM;
+                        else {
+                            subM = 60 - cTimeM + timeM;
+                            if(subH > 0)
+                                subH--;
+                            else
+                                subH = 23;
+                        }
+
+                        //get milliseconds from calculated time
+                        long triggerAtMillis = ((subH*60)+subM)*60000;
+
+                        Log.d("1kapanel", "wewe subM "+subM);
+                        Log.d("1kapanel", "wewe subTime "+subH+":"+subM);
+                        Log.d("1kapanel", "wewe millis "+triggerAtMillis);
+
+//todo zdaj zracuna pravilno cez koliko ur in minut se naj zacne
+
+                        //setAlarm(sender, id, triggerAtMillis, 86400000);
+                    }
+                    break;
+                case "daily":
+                    Log.d("1kapanel", "wewe daily "+repeatObj.getJSONArray("time_in_day"));
+                    Log.d("1kapanel", "wewe daily "+repeatObj.getInt("every_which_day"));
+                    break;
+                case "weekly":
+                    Log.d("1kapanel", "wewe weekly "+repeatObj.getJSONArray("time_in_day"));
+                    Log.d("1kapanel", "wewe weekly "+repeatObj.getJSONArray("day_in_week"));
+                    break;
+            }
+
+        } catch(JSONException e){
+            Log.e(TAG, "wewe AlarmLib.setAlarms() - Error: " + e.getMessage());
+            //GeneralLib.reportCrash(e, null);
+        }
+
+        //set alarm
+        //setAlarm(sender, id, triggerAtMillis, intervalMillis);
+    }
+
+    /**
+     * Check if there are alarms in DB, then check if they are running, if not, set them
+     */
+    public void checkAndRunAlarms(){
+        String[][] alarms = new Database(ctx).getData("alarms",
+                new String[]{"srv_id", "alarm_notif_title", "alarm_notif_message", "alarm_notif_repeat", "alarm_notif_sound", "alarm_id"}, null);
+
+        //are there alarms in DB?
+        if(alarms != null)
+            for(String[] arr : alarms) {
+                //Log.d(TAG, "wewe alarm" + Arrays.toString(arr));
+
+                //is alarm for that id not registered yet?
+                if(PendingIntent.getBroadcast(ctx, Integer.parseInt(arr[5]),
+                        new Intent(ctx, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE) == null) {
+
+                    //Log.d(TAG, "wewe alarm not registered yet " + arr[5]);
+
+                    //get link of survey for this alarm
+                    String[] survey = new Database(ctx).getRowData("surveys",
+                            new String[]{"link"}, "id=" + arr[0]);
+                    String link = null;
+                    if (survey != null)
+                        link = survey[0];
+
+                    HashMap<String, String> data = new HashMap<>();
+                    data.put("link", link);
+                    data.put("title", arr[1]);
+                    data.put("message", arr[2]);
+                    data.put("sound", arr[4]);
+                    data.put("repeat", arr[3]);
+
+                    //set alarm
+                    setAlarms(data, Integer.parseInt(arr[5]));
+                }
+            }
+    }
+
+    /**
+     * Set alarm - schedule a series of notifications
+     * @param data - Data of needed values to show notification
+     */
+    public void setOrUpdateNewAlarm(Map<String, String> data){
+        //you can get your text message here.
+        /*String link = data.get("link");
+        String ank_id = data.get("ank_id");
+
+        ContentValues initialValues = new ContentValues();
+        initialValues.put("id",  ank_id);
+        initialValues.put("link", link);
+
+        Database DBH = new Database(ctx);
+
+        //insert new survey in DB, if already exists, id is -1
+        DBH.getWritableDatabase().insertWithOnConflict("surveys", null, initialValues, SQLiteDatabase.CONFLICT_IGNORE);
+
+        int id;
+        //is alarm in DB for that survey
+        String[] alarm = DBH.getRowData("alarms",
+                new String[]{"alarm_id"}, "srv_id='"+ank_id+"'");
+
+        //there is alarm in DB for that survey - update it
+        if(alarm != null) {
+            id = Integer.parseInt(alarm[0]);
+            updateAlarmDB(data, alarm[0], DBH);
+        }
+        //there is no alarm for this survey yet, insert it
+        else {
+            //get alarm number
+            id = GeneralLib.getRandomInt();
+            insertAlarmDB(data, id+"", DBH);
+        }*/
+
+        setAlarms(data, 0);
+    }
+
+    private void insertAlarmDB(Map<String, String> data, String alarm_id, Database DB){
+        //vstavi v tabelo novegi alarm
+        DB.insertData("alarms", new String[][]{
+                {"srv_id", data.get("ank_id")},
+                {"alarm_notif_title", data.get("title")},
+                {"alarm_notif_message", data.get("message")},
+                {"alarm_notif_repeat", data.get("repeat")},
+                {"alarm_notif_sound", data.get("sound")},
+                {"alarm_id", alarm_id}});
+    }
+
+    private void updateAlarmDB(Map<String, String> data, String alarm_id, Database DB){
+        ContentValues initialValues = new ContentValues();
+        initialValues.put("alarm_notif_title",  data.get("title"));
+        initialValues.put("alarm_notif_message", data.get("message"));
+        initialValues.put("alarm_notif_repeat", data.get("repeat"));
+        initialValues.put("alarm_notif_sound", data.get("sound"));
+        initialValues.put("alarm_id", alarm_id);
+
+        DB.updateData("alarms", initialValues, "srv_id='"+data.get("ank_id")+"'");
+    }
+
+    /**
+     * Calce and delete alarm for this survey
+     *
+     * @param srv_id - id of survey, parent of alarm(s)
+     */
+    public void cancelAlarm(String srv_id){
+        Database DB = new Database(ctx);
+        String[] alarm = DB.getRowData("alarms",
+                new String[]{"alarm_id"}, "srv_id='"+srv_id+"'");
+
+        if(alarm != null) {
+            int alarm_id = Integer.parseInt(alarm[0]);
+
+            PendingIntent sender = PendingIntent.getBroadcast(ctx, alarm_id,
+                    new Intent(ctx, AlarmReceiver.class), PendingIntent.FLAG_NO_CREATE);
+            //is alarm for that id registered? cancel if yes
+            if (sender != null) {
+                Log.d(TAG, "wewe alarm is already registered " + alarm_id);
+
+                AlarmManager alarm1 = (AlarmManager) ctx.getSystemService(ALARM_SERVICE);
+                if(alarm1 != null) {
+                    alarm1.cancel(sender);
+                    Log.d(TAG, "wewe alarm canceled " + alarm_id);
+                }
+            }
+
+            deleteAlarmDB(srv_id, DB);
+        }
+    }
+
+    /**
+     * Delete alarm from DB
+     *
+     * @param srv_id - id of survey, parent of alarm(s)
+     * @param DB -Database
+     */
+    private void deleteAlarmDB(String srv_id, Database DB){
+        DB.deleteRows("alarms", "srv_id='"+srv_id+"'");
+    }
+}

@@ -1,0 +1,115 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/enkablue"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/default_textview_text_size"
+        android:gravity="center"
+        android:paddingBottom="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingEnd="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingStart="10dp" />
+
+    <TextView
+        android:id="@+id/ni_podatkov_vprasalniki"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginStart="5dp"
+        android:gravity="center_vertical|center_horizontal"
+        android:text="@string/ni_vprasalnikov"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:visibility="gone" />
+
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/swiperefresh_vsivprasalniki"
+        android:layout_below="@+id/textTitle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/vsiVprasalnikiList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:visibility="gone">
+
+        </ListView>
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <!--<TextView
+        android:id="@+id/svprijavljenInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />-->
+
+    <!--<TextView
+        android:id="@+id/textNaslov"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="3sp"
+        android:text="@string/textNaslovVprasalnika"
+        android:textSize="@dimen/default_textview_text_size"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/textNaslov"
+        android:layout_marginBottom="3sp"
+        android:layout_marginEnd="3sp"
+        android:layout_marginRight="3sp"
+        android:text="@string/textOdgovoriVprasalnika"
+        android:textSize="@dimen/default_textview_text_size"
+        android:textStyle="bold" />-->
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_below="@+id/textTitle"
+        android:background="@drawable/gradient_divider" />
+
+    <!--<LinearLayout
+        android:id="@+id/buttonsLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+
+        <ImageButton
+            android:id="@+id/gvvbuttonNazaj"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@drawable/circlebutton"
+            android:src="@drawable/questionnaires" />
+
+    </LinearLayout>-->
+
+</RelativeLayout>

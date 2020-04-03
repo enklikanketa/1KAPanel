@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">1KAPanel</string>
+    <string name="title_activity_main">Domov</string>
+
+    <string name="loadPage">Nalagam stran&#8230;</string>
+
+    <!-- network and communication -->
+    <string name="general_mobile_network_error">Mobilno omrežje ni dosegljivo</string>
+
+    <!-- main form -->
+    <string name="tryAgain">Poskusi ponovno</string>
+</resources>

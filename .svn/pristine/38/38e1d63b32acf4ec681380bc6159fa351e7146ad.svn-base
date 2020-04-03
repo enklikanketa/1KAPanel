@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="enklikanketa.com.a1kapanel">
+
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:launchMode="singleTop"
+            android:name=".Main"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".WebResevanje"
+            android:parentActivityName=".Home"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:launchMode="singleTop"
+            android:name=".Home"
+            android:label="@string/app_name"/>
+        <activity
+            android:launchMode="singleTop"
+            android:name=".vpis"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:launchMode="singleTop"
+            android:name=".MyActivity"
+            android:parentActivityName=".Home"
+            android:label="@string/my_activity"/>
+
+        <activity
+            android:launchMode="singleTop"
+            android:name=".MergeIdentifier"
+            android:parentActivityName=".Home"
+            android:label="@string/merge_identifier"/>
+
+        <activity
+            android:launchMode="singleTop"
+            android:name=".PrefsActivity"
+            android:parentActivityName=".Home"
+            android:label="@string/settings"/>
+
+        <service android:name=".Services.MyFirebaseInstanceIDService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".Services.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- Set custom default icon. This is used when no icon is set for incoming notification messages.
+        See README(https://goo.gl/l4GJaQ) for more. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <!-- Set color used with incoming notification messages. This is used when no color is set for the incoming
+             notification message. See README(https://goo.gl/6BKBk7) for more. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorPrimaryDark" />
+
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="d30480a7b748ee9b442f8be1a7e18347a71799af" />
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDyIlyHm9HTk1YrrT4lvZwu7mndJQAJxbw"/>
+
+        <receiver android:name=".Receivers.MyStartServiceReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".Receivers.GpsLocationReceiver">
+            <intent-filter>
+                <action android:name="android.location.PROVIDERS_CHANGED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".Receivers.BatteryLevelReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_LOW"/>
+                <action android:name="android.intent.action.BATTERY_OKAY"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".Receivers.TimeZoneChangedReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.DATE_CHANGED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".Receivers.MyPackageReplacedReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".Receivers.ActionReceiver" />
+        <receiver android:name=".Receivers.AlarmReceiver" />
+        <receiver android:name=".Receivers.AlarmLocationsJobReceiver" />
+        <service android:name=".Services.GeofenceTransitionsIS" />
+
+        <service
+            android:name=".Services.LocationUpdatesService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <service
+            android:name=".Services.DetectedActivitiesIntentService"
+            android:exported="false" />
+
+        <service android:name=".Services.BackgroundDetectedActivitiesService"></service>
+
+        <service
+            android:name=".Services.LocationsJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" >
+
+        </service>
+    </application>
+</manifest>

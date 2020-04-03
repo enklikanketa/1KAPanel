@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/link"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/srv_version"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/version_datetime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/vprAktivLay"
+        android:layout_width="20dp"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/naslov_layout"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginStart="10dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
+
+        <View
+            android:id="@+id/vprAktiv"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="10dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/litem_spodaj_levo_mobile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/spodaj_levo_layout"
+        android:layout_alignEnd="@+id/vprAktivLay"
+        android:layout_alignTop="@+id/spodaj_levo_layout"
+        android:layout_marginTop="4dp"
+        android:gravity="center_horizontal"
+        android:textSize="@dimen/li_spodaj_text_size"
+        android:layout_alignStart="@+id/vprAktivLay" />
+
+    <RelativeLayout
+        android:id="@+id/naslov_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toEndOf="@+id/vprAktivLay"
+        android:layout_toStartOf="@+id/responses_layout">
+
+        <TextView
+            android:id="@+id/litem_zgoraj"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="10dp"
+            android:textSize="@dimen/li_zgoraj_text_size"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/spodaj_levo_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/naslov_layout"
+        android:layout_marginStart="4dp"
+        android:layout_toEndOf="@+id/vprAktivLay"
+        android:orientation="horizontal"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/litem_spodaj_levo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="@dimen/li_spodaj_text_size" />
+
+    </LinearLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/responses_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignBottom="@+id/spodaj_levo_layout"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/naslov_layout"
+        android:layout_marginEnd="4dp"
+        android:orientation="vertical">
+
+        <!-- erjsnja z oblackom TextView
+            android:id="@+id/litem_enote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/responses"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:gravity="center"
+            android:paddingBottom="12dp"
+            android:textSize="@dimen/li_spodaj_text_size" /-->
+
+        <TextView
+            android:id="@+id/litem_enote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:gravity="center"
+            android:textSize="@dimen/li_zgoraj_text_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/litem_spodaj_odgovori"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_weight="0"
+            android:gravity="bottom"
+            android:paddingBottom="10dp"
+            android:paddingTop="4dp"
+            android:textSize="@dimen/li_spodaj_text_size" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/litem_spodaj"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/spodaj_levo_layout"
+        android:layout_alignBottom="@+id/spodaj_levo_layout"
+        android:layout_toEndOf="@+id/spodaj_levo_layout"
+        android:layout_toStartOf="@+id/responses_layout"
+        android:paddingBottom="10dp"
+        android:textSize="@dimen/li_spodaj_text_size" />
+</RelativeLayout>

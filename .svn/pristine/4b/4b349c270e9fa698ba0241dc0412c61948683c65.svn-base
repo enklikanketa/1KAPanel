@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--https://www.1ka.si/ ali http://test.1ka.si/ ali http://192.168.1.101/1ka/ (localhost) -->
+    <string name="server_url" translatable="false">http://141.255.212.23/1ka/</string>
+    <string name="nextPin_project_name" translatable="false">1KAPanel</string>
+
+    <string name="defaultSurveyURL" translatable="false">http://141.255.212.23/1ka/a/e</string>
+
+    <!-- nextPin Collection app -->
+    <string name="google_maps_key" translatable="false">
+        AIzaSyBOrBrRp6bwLiV0EhyWpGLhrBwTGGBDLYM</string>
+</resources>

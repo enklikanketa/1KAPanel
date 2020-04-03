@@ -1,0 +1,27 @@
+package enklikanketa.com.a1kapanel;
+
+/**
+ * JobService to be scheduled by the JobScheduler.
+ * start another service
+ */
+/*public class TestJobService extends JobService {
+    private static final String TAG = "SyncService";
+
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        Log.d("1kapanel", "wewe TestJobService onStartJob");
+        Intent service = new Intent(getApplicationContext(), LocalWordService.class);
+        getApplicationContext().startService(service);
+        //Util.scheduleJob(getApplicationContext()); // reschedule the job
+        Intent intent = new Intent();
+        intent.setAction("enklikanketa.com.CUSTOM_INTENT"); sendBroadcast(intent);
+        return true;
+    }
+
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        Log.d("1kapanel", "wewe TestJobService onStopJob");
+        return true;
+    }
+
+}*/

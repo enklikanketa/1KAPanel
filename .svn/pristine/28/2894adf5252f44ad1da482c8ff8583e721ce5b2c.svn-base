@@ -1,0 +1,92 @@
+package enklikanketa.com.a1kapanel;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import static enklikanketa.com.a1kapanel.System.ServerCommunication.PostNextPinEditActivity;
+
+class sendActivityEditTask extends AsyncTask<String, String, String> {
+
+    private ProgressDialog loader;
+    private Activity ctx;
+    private int activity_id;
+    private String activityType;
+
+    // This is the reference to the associated listener
+    private final TaskListener taskListener;
+
+    sendActivityEditTask(Activity context, int activity_id, String activityType, TaskListener listener) {
+
+        ctx = context;
+        this.activity_id = activity_id;
+        this.activityType = activityType;
+        this.taskListener = listener;
+    }
+
+    public interface TaskListener {
+        void onFinished(String result);
+    }
+
+    protected String doInBackground(String... urls) {
+
+        // poslji
+        JSONObject object = new JSONObject();
+
+        // uporabnik prijavljen
+        try {
+            JSONObject sensorActivity = new JSONObject();
+            sensorActivity.put(activityType, 100);
+
+            object.put("sensor_activity_all", sensorActivity);
+
+        } catch (JSONException e) {
+            Log.e("1kapanel", "Could not parse malformed JSON: \"" + object.toString() + "\"");
+        }
+
+        String response = PostNextPinEditActivity(ctx, object, activity_id);
+        Log.d("1kapanel", "response "+response);
+
+        return response;
+    }
+
+    protected void onPostExecute(String result) {
+        //TODO naredi kot v hitra1ka varnostno zapiranje
+        loader.dismiss();
+
+        if (result != null) {
+            try {
+                JSONObject linkobj = new JSONObject(result);
+
+                if (linkobj.has("message") && linkobj.getString("message").equals("ok")) {
+                    if(this.taskListener != null) {
+
+                        // And if it is we call the callback function on it.
+                        this.taskListener.onFinished(result);
+                    }
+                } else {
+                    Log.e("1kapanel", "sendActivityEditTask onPostExecute(): message not ok");
+                }
+            } catch (JSONException e) {
+                Log.e("1kapanel", "sendActivityEditTask onPostExecute(): " + e);
+            }
+        }
+        //ce je null, pomeni da server ni dosegljiv ali pa so druge napake
+        /*else {
+            //preveri, ce je povezava
+            //Network.checkMobileInternet(ctx, true);
+            Toast.makeText(ctx, ctx.getText(R.string.general_remote_server_error)
+                    .toString(), Toast.LENGTH_LONG).show();
+            buttonView.setChecked(blockIP == 0);
+        }*/
+    }
+
+    protected void onPreExecute() {
+        //nastavi progressdialog
+        loader = ProgressDialog.show(ctx, "", ctx.getText(R.string.sendingRequest).toString(), true);
+    }
+}

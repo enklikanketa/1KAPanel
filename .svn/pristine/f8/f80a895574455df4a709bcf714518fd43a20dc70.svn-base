@@ -1,0 +1,49 @@
+package enklikanketa.com.a1kapanel.Adapters;
+
+import android.app.Activity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.SimpleAdapter;
+import android.widget.TextView;
+import java.util.HashMap;
+import java.util.List;
+
+import enklikanketa.com.a1kapanel.R;
+
+public class VprasalnikiSimpleAdapter extends SimpleAdapter {
+
+    //private Activity ctx;
+    //private boolean mobile_created_list;
+
+    public VprasalnikiSimpleAdapter(Activity context, List<HashMap<String, String>> items,
+                                    int resource, String[] from, int[] to) {
+        super(context, items, resource, from, to);
+        //ctx = context;
+        //mobile_created_list = mobile_created_list1;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View rowView = super.getView(position, convertView, parent);
+
+        TextView status = rowView.findViewById(R.id.status);
+        String stanje = (status.getText().toString());
+
+        View aktiv = rowView.findViewById(R.id.vprAktiv);
+
+        //deaktiviran
+        if (stanje.equals("")) {
+            aktiv.setBackgroundResource(R.drawable.list_item_circle_active);
+        }
+        //se ni bil aktiviran
+        else if (stanje.equals("6")) {
+            //aktiv.setBackgroundResource(R.drawable.list_item_circle_unactive);
+        }
+        //ostali so aktivirani (active = 1)
+        else {
+            aktiv.setBackgroundResource(R.drawable.list_item_circle_deactive);
+        }
+
+        return rowView;
+    }
+}

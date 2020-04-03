@@ -1,0 +1,188 @@
+<resources>
+    <string name="app_name">1KAPanel</string>
+
+    <string name="loadPage">Nalagam stran&#8230;</string>
+    <string name="sendingRequest">Pošiljanje poizvedbe&#8230;</string>
+
+    <!-- network and communication -->
+    <string name="general_mobile_network_error">Mobilno omrežje ni dosegljivo</string>
+    <string name="general_remote_server_error">Oddaljeni strežnik ni dosegljiv. Možen vzrok je slaba povezava z internetom.</string>
+    <string name="gathering_data_progress">Pridobivanje podatkov&#8230;</string>
+
+    <!-- main form -->
+    <string name="tryAgain">Poskusi ponovno</string>
+
+    <!-- LOGIN FORM -->
+    <string name="vpis">Vpis</string>
+    <string name="identifier">Identifikator</string>
+    <string name="identifierNotExist">Identifikator ne obstaja</string>
+
+    <!-- HOME MENU -->
+    <string name="merge_identifier">Združi indentifikator</string>
+    <string name="my_geofences">Moje geotočke</string>
+    <string name="my_locations">Moje lokacije</string>
+    <string name="my_subscriptions">Moje raziskave</string>
+    <string name="my_questionnaires">Moje ankete</string>
+    <string name="settings">Nastavitve</string>
+    <string name="feedback">Povratne informacije</string>
+
+    <!-- MERGE IDENTIFIER FORM -->
+    <string name="merge_identifier_button">Združi</string>
+    <string name="identifiers_merged">Uspešno ste združili identifikator</string>
+    <string name="invalid_identifier">Vnesli ste nepravilen identifikator</string>
+    <string name="already_has_access">Že sodelujete v tej raziskavi</string>
+    <!-- SURVEY CONSENT FORM -->
+    <string name="survey_consent_title">Sodelovanje v novi raziskavi</string>
+    <string name="survey_consent_desc">Za sodelovanje v tej raziskavi potrebujemo vaše dovoljenje za zbiranje naslednjih podatkov:</string>
+    <string name="survey_consent_question">Ali soglašate z zbiranjem navedenih podatkov za namen te raziskave?</string>
+    <string name="survey_consent_permission_notifications">Obveščanje o vprašalnikih</string>
+    <string name="survey_consent_permission_location">Dostop do lokacije</string>
+    <string name="survey_consent_permission_sensors">Beleženje senzorskih podatkov o gibanju</string>
+    <string name="survey_consent_permission_button_consent">Soglašam</string>
+    <string name="survey_consent_permission_button_decline">Ne soglašam</string>
+
+    <!-- Surveys fragment -->
+    <string name="surveys">Ankete</string>
+    <string name="no_surveys">Ni aktivnih vprašalnikov</string>
+    <!-- Alert dialog for anwer delete -->
+    <string name="unit_delete_alert_title">Izbris odgovora</string>
+    <string name="unit_delete_alert_title_entry">Izbris vnosa podatkov</string>
+    <string name="unit_delete_alert_desc">Ali ste prepričani, da želite izbrisati ta odgovor: \n</string>
+    <string name="unit_delete_alert_desc_entry">Ali ste prepričani, da želite izbrisati ta vnos podatkov: \n</string>
+    <!-- Surveys to fill fragment -->
+    <!-- List items in Surveys to fill fragment -->
+    <string name="litem_time">Čas</string>
+    <string name="litem_geofence">Geotočka</string>
+    <string name="litem_entry">Vnos</string>
+    <string name="litem_questionnaire">Vprašalnik</string>
+
+
+    <!-- Subscriptions fragment -->
+    <string name="subscriptions">Raziskave</string>
+    <string name="no_subscriptions">Ni aktivnih raziskav</string>
+    <string name="dialog_unsubscribed_title">Odjavljeni iz raziskave</string>
+    <string name="dialog_unsubscribed_message">Uspešno ste se odjavili iz raziskave</string>
+    <string name="dialog_unsubscribed_ok">V redu</string>
+
+    <!-- Study page and its frakments -->
+    <string name="questionnaires_to_fill">Za izpolnitev</string>
+    <string name="filled_questionnaires">Izpolnjeni</string>
+    <string name="preponed_study_title">Raziskava:&#160;</string>
+    <!-- Subscription info fragment -->
+    <string name="subscription_info">Informacije o raziskavi</string>
+    <string name="btn_unsubscribe">Odjava iz raziskave</string>
+    <string name="dialog_unsubscribe_title">Odjava iz raziskave</string>
+    <string name="dialog_unsubscribe_message">Ali ste prepričani, da se želite odjaviti iz raziskave?</string>
+    <string name="dialog_unsubscribe_yes">Da</string>
+    <string name="dialog_unsubscribe_no">Ne</string>
+    <string name="subscription_description_title">Opis raziskave</string>
+    <string name="subscription_permissions_title">Seznam dovoljenj za sodelovanje v tej raziskavi</string>
+
+    <!-- Pick location form -->
+    <string name="pick_location">Izberi lokacijo</string>
+    <string name="pick_location_done_button">Izberi</string>
+
+    <!-- Geofences fragment -->
+    <string name="geofences">Geotočke</string>
+
+    <!-- nextPin Collection app -->
+    <string name="pref_settings">Nastavitve</string>
+
+    <!-- Settings form -->
+    <string name="pref_cat_sys_state">Statistika</string>
+    <string name="Start_Tracking">Začni sledenje</string>
+    <string name="Stop_Tracking">Končaj sledenje</string>
+    <string name="start_desc">Trenutno aplikacija ne izvaja GPS sledenja. Klikni za pričetek.</string>
+    <string name="stop_desc">Trenutno aplikacija izvaja GPS sldedenje. Klikni za prenehanje.</string>
+    <string name="refresh_alarms">Osveži načrtovanje sporočil (kdaj prikazati potisna sporočila)</string>
+    <string name="refresh_geofences">Osveži geotočke (kje prikazati potisna sporočila)</string>
+    <string name="refresh_tracking">Osveži sledenje (pridobivanje podatkov o lokaciji med raziskavo)</string>
+    <string name="pref_tracking_number">Število shranjenih (neposlanih) lokacij in aktivnosti:</string>
+    <string name="pref_tracking_number_sum">Lokacije: %1$d, prepoznane aktivnosti: %2$d</string>
+
+    <!-- GPS notification -->
+    <string name="turn_gps_on">Prosimo, vključite GPS</string>
+
+    <!-- Survey notification -->
+    <string name="default_alarm_notification_title">Imate %d novih vprašalnikov</string>
+    <string name="notif_push_channel_title">Sporočila raziskav</string>
+    <string name="notif_persistant_channel_title">Pomembna sporočila</string>
+    <string name="notif_default_message">Veselo izpolnjevanje!</string>
+
+    <!-- Dialog private name -->
+
+    <!-- PERMISSIONS -->
+    <string name="permission_rationale">Dovoljenje deljenja lokacije je potrebno za osnovne funkcije</string>
+    <string name="permission_denied_explanation">Dovoljenje je bilo zavrnjeno, vendar je potrebno za delovanje osnovnih funkcionalnosti</string>
+
+    <!-- GEOFENCING -->
+    <!-- Transition type strings -->
+    <!--<string name="geofence_transition_entered">Entered</string>
+    <string name="geofence_transition_exited">Exited</string>
+    <string name="geofence_transition_dwell">Dwell</string>
+    <string name="unknown_geofence_transition">Unknown Transition</string>-->
+
+    <!-- ACTIVITY TRACKING -->
+    <string name="iagree">Se strinjam</string>
+    <string name="unsubscribe">Odjava</string>
+
+    <!-- LOC TRACKING -->
+    <string name="tracking_permission_alert_title">Dovoljenje o sledenju</string>
+    <string name="tracking_permission_alert_desc">Za sodelovanje v raziskavi \"%1$s\" je zahtevano soglasje za sledenje vaše lokaciji. Podatki lokacije in aktivnosti senzorjev bodo obdelani na oddaljenem strežniku. Vse obdelane podatke lahko spremljate v razdelku \"Moje lokacije\".</string>
+    <string name="tracking_notification_permission_title">Zahtevano soglasje</string>
+    <string name="tracking_notification_permission_desc">Raziskava:&#160;</string>
+    <string name="tracking_notification_title">Sledenje za raziskavo</string>
+    <string name="tracking_notification_desc_on">Aplikacija izvaja GPS sledenje za raziskovalne namene</string>
+    <string name="tracking_notification_desc_off">Prosimo vključite GPS sledenje za raziskovalne namene</string>
+    <string name="tracking_notification_start">Začni</string>
+    <string name="tracking_notification_stop">Končaj</string>
+    <string name="tracking_notification_pause">Ustavi</string>
+    <string name="tracking_notification_start_title">Vključite sledenje</string>
+    <string name="tracking_notification_start_desc">Sodelujete v raziskavi, ki zahteva sledenje</string>
+    <string name="menu_toggle_clustering">Vklop/izklop grupiranja</string>
+    <string name="my_location_infowindow_snippet">Klikni za izbris</string>
+    <string name="location_delete_alert_title">Izbris lokacije</string>
+    <string name="location_delete_alert_desc">Ali ste prepričani, da želite izbrisati to lokacijo?</string>
+    <string name="location_delete_alert_no">Prekliči</string>
+    <string name="location_delete_alert_yes">Da</string>
+    <string name="no_detected_activities">Aktivnosti ni zaznanih</string>
+
+    <!-- Dialog user activity -->
+    <!-- nextPin Activity type names -->
+
+    <!-- ABOUT FORM -->
+    <string name="about_app">O aplikaciji</string>
+    <string name="cdi_html">
+    <![CDATA[
+    <i>
+    <div style=\"text-align: center; color: #4d4d4d;\">
+    <br />
+    <p>Center za dru&#382;boslovno informatiko,</p>
+    <p>Fakulteta za dru&#382;bene vede, Univerza v Ljubljani</p>
+    <p>Kardeljeva pl. 5, 1000 Ljubljana</p>
+    <p>E-po&#353;ta: <a href="mailto:cdi@fdv.uni-lj.si">cdi@fdv.uni-lj.si</a></p>
+    <p>URL: <a href="http://www.cdi.si">www.cdi.si</a></p>
+    <p>Telefon: 030/702-788 </p>
+    <br />
+    <a href="https://www.1ka.si/d/sl/o-1ka/pogoji-uporabe-storitve-1ka/splosni-pogoji">Splo&#353;ni pogoji</a>,
+    <a href="https://www.1ka.si/d/sl/o-1ka/pogoji-uporabe-storitve-1ka/politika-zasebnosti">Politika zasebnosti</a>,
+    <a href="https://www.1ka.si/d/sl/o-1ka/pogoji-uporabe-storitve-1ka/politika-piskotkov">Politika pi&#353;kotkov</a>,
+    <a href="https://www.1ka.si/d/sl/o-1ka/pogoji-uporabe-storitve-1ka/antispam-politika">Antispam politika</a><br /></p>
+    </div>
+    <div style=\"text-align: center; color: #4d4d4d;\">
+    <p><a href="https://www.1ka.si/d/sl/o-1ka/aplikacija-1ka">Copyright</a> (&copy;) 2002-2019 Univerza v Ljubljani, Fakulteta za dru&#382;bene vede, Center za dru&#382;boslovno informatiko</p>
+    <p>1KA Panel version: %s</p>
+    <p>Ikone v aplikaciji z <a target="_blank" href="https://icons8.com/">icons8</a>.</p>
+    </div>
+    </i>
+    ]]>
+    </string>
+
+    <string name="arrs_html">
+    <![CDATA[
+        <div style=\"color: #4d4d4d;\">
+        <p>The project \'Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach\' was financially supported by the Slovenian Research Agency</p>
+        </div>
+    ]]>
+    </string>
+</resources>
