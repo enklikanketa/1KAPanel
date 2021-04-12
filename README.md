@@ -2,8 +2,6 @@
 Nejc Berzelak, Uroš Podkrižnik and Vasja Vehovar  
 University of Ljubljana, Faculty of Social Sciences
 
-*The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
-
 # What is 1KAPanel?
 
 The application is an extension to the existing web survey software 1KA (http://www.1ka.si), with 1KA used as the central management tool that performs the following main tasks related to the application:
@@ -40,3 +38,8 @@ During research, instant communication is needed between 1KA web project and 1KA
 
 ## Connect with Crashlytics (optional)
 It is very important to get feedback of possible crash reports in 1KAPanel app and unwanted catched exceptions. We advise you to use this kit to get reports and repear them as fast as you can, so future data gathering can not be affected. To use it in app, follow the instructions [here](https://firebase.google.com/docs/crashlytics/get-started?platform=android&utm_source=fabric&utm_medium=inline_banner&utm_campaign=fabric_sunset&utm_content=kits_crashlytics). As mentioned, this is optional and if you don't want to use it, all you have to do is comment two lines - first in *App.java* and second in *Libraries/GeneralLib.java*.
+
+# Acknowledgments
+*The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
+
+* The authors acknowledge the financial support from the Slovenian Research Agency (research core funding No. P5-0399).*
