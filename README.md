@@ -1,6 +1,5 @@
 # 1KAPanel
-Nejc Berzelak, Uroš Podkrižnik and Vasja Vehovar
-
+Nejc Berzelak, Uroš Podkrižnik and Vasja Vehovar  
 University of Ljubljana, Faculty of Social Sciences
 
 *The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
