@@ -42,4 +42,4 @@ It is very important to get feedback of possible crash reports in 1KAPanel app a
 # Acknowledgments
 *The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
 
-* The authors acknowledge the financial support from the Slovenian Research Agency (research core funding No. P5-0399).*
+*The authors acknowledge the financial support from the Slovenian Research Agency (research core funding No. P5-0399).*
