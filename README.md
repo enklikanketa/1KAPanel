@@ -20,7 +20,7 @@ The application currently supports the following core data collection features i
 -	defining geofences that trigger a request to complete a new questionnaire
 -	location and activity tracking with questionnaire completion requests based on location and activity-related criteria (e.g. at the end of a specific activity type that exceeds a threshold distance or duration).
 
-# What do you need to make it work?
+# How to make it work?
 Before you start to use 1KAPanel app, you have to install open source project 1KA - OneClickSurvey. You can get more info about this project [here](https://www.1ka.si/d/en/about/uses-of-1ka-services/own-installation). You can also contact user support via e-mail on enklikanketa@gmail.com.
 
 ## Generate 1KA API key
