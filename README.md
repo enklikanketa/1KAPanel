@@ -1,5 +1,6 @@
 # 1KAPanel
 Nejc Berzelak, Uroš Podkrižnik and Vasja Vehovar
+
 University of Ljubljana, Faculty of Social Sciences
 
 # What do you need to make it work?
