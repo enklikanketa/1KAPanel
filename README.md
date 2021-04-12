@@ -5,6 +5,21 @@ University of Ljubljana, Faculty of Social Sciences
 
 *The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
 
+# What is 1KAPanel?
+
+The application is an extension to the existing web survey software 1KA (http://www.1ka.si), with 1KA used as the central management tool that performs the following main tasks related to the application:
+-	create studies and set up data collection methods used by each study (questionnaires, activity tracking…);
+-	manage research participants and assign them to individual studies;
+-	render web questionnaires to be displayed in the application’s integrated web browser;
+-	store collected data and paradata.
+
+A research participant who installs the application can participate in multiple studies at the same time. A simplified panel approach is used for this purpose: all research participants are centrally managed and can be assigned (subscribed) to individual studies. Upon subscription and informed consent to collect the requested data, the data collection instructions are sent from 1KA to the mobile application. 
+
+The application currently supports the following core data collection features in addition to standard web questionnaires:
+-	requesting a completion of new questionnaires presented at predefined time intervals or displaying a notification per the study manager’s request;
+-	defining geofences that trigger a request to complete a new questionnaire
+-	location and activity tracking with questionnaire completion requests based on location and activity-related criteria (e.g. at the end of a specific activity type that exceeds a threshold distance or duration).
+
 # What do you need to make it work?
 Before you start to use 1KAPanel app, you have to install open source project 1KA - OneClickSurvey. You can get more info about this project [here](https://www.1ka.si/d/en/about/uses-of-1ka-services/own-installation). You can also contact user support via e-mail on enklikanketa@gmail.com.
 
