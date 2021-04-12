@@ -3,6 +3,8 @@ Nejc Berzelak, Uroš Podkrižnik and Vasja Vehovar
 
 University of Ljubljana, Faculty of Social Sciences
 
+*The project ‘Integration of mobile devices into survey research in social sciences: Development of a comprehensive methodological approach’ (ID J5-8233) was financially supported by the Slovenian Research Agency.*
+
 # What do you need to make it work?
 Before you start to use 1KAPanel app, you have to install open source project 1KA - OneClickSurvey. You can get more info about this project [here](https://www.1ka.si/d/en/about/uses-of-1ka-services/own-installation). You can also contact user support via e-mail on enklikanketa@gmail.com.
 
